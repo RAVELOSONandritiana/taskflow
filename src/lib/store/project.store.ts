@@ -1,0 +1,10 @@
+import { writable } from "svelte/store";
+
+export interface ProjectI {
+    id: number;
+    src: string | undefined;
+    title: string;
+    description: string | undefined;
+}
+
+export const projects = writable<ProjectI[]>([]);
