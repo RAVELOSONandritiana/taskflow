@@ -74,46 +74,6 @@
 	</div>
 </section>
 
-<section class="my-32">
-	<div class="mx-auto max-w-7xl px-10 md:px-30">
-		<div class="text-center">
-			<h2 class="text-3xl font-extrabold text-gray-900 sm:text-5xl dark:text-white">
-				Ready to <strong class="text-indigo-500">take control</strong> of your projects?
-			</h2>
-			<p class="mx-auto mt-4 max-w-sm text-gray-500 dark:text-gray-300">
-				Start using TaskFlow for free and turn ideas into action.
-			</p>
-			<div class="mx-auto mt-4 flex flex-col space-y-4 md:flex-row max-w-md md:space-x-3">
-				<input
-					type="email"
-					class="w-full rounded-md border border-gray-400 px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-600 focus:outline-hidden dark:placeholder:text-slate-300 dark:bg-gray-800 dark:border-gray-700"
-					placeholder="email address"
-				/>
-				<ShadButton
-					class="border border-indigo-500 bg-white px-8 py-5 font-bold text-indigo-500! hover:bg-indigo-500 hover:text-white! dark:bg-gray-800 dark:border-gray-700"
-				>
-					<div class="flex space-x-3">
-						Sign Up
-						<svg
-							class="size-5 shadow-sm rtl:rotate-180"
-							xmlns="http://www.w3.org/2000/svg"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M17 8l4 4m0 0l-4 4m4-4H3"
-							></path>
-						</svg>
-					</div>
-				</ShadButton>
-			</div>
-		</div>
-	</div>
-</section>
 
 <section class="my-32 bg-gray-50 dark:bg-gray-800 py-16">
 	<div class="mx-auto max-w-7xl px-10 md:px-30">
@@ -265,6 +225,47 @@
 				<p class="mt-4 text-gray-500 dark:text-gray-300">
 					Yes, TaskFlow offers integrations with popular tools like Slack, Google Drive, and more. You can connect your favorite apps to streamline your workflow.
 				</p>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="my-32">
+	<div class="mx-auto max-w-7xl px-10 md:px-30">
+		<div class="text-center">
+			<h2 class="text-3xl font-extrabold text-gray-900 sm:text-5xl dark:text-white">
+				Ready to <strong class="text-indigo-500">take control</strong> of your projects?
+			</h2>
+			<p class="mx-auto mt-4 max-w-sm text-gray-500 dark:text-gray-300">
+				Start using TaskFlow for free and turn ideas into action.
+			</p>
+			<div class="mx-auto mt-4 flex flex-col space-y-4 md:flex-row max-w-md md:space-x-3">
+				<input
+					type="email"
+					class="w-full rounded-md border border-gray-400 px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-600 focus:outline-hidden dark:placeholder:text-slate-300 dark:bg-gray-800 dark:border-gray-700"
+					placeholder="email address"
+				/>
+				<ShadButton
+					class="border border-indigo-500 bg-white px-8 py-5 font-bold text-indigo-500! hover:bg-indigo-500 hover:text-white! dark:bg-gray-800 dark:border-gray-700"
+				>
+					<div class="flex space-x-3">
+						Sign Up
+						<svg
+							class="size-5 shadow-sm rtl:rotate-180"
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M17 8l4 4m0 0l-4 4m4-4H3"
+							></path>
+						</svg>
+					</div>
+				</ShadButton>
 			</div>
 		</div>
 	</div>
