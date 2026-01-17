@@ -7,6 +7,9 @@
 	import Simplicity from '$lib/images/simplicity.svg';
 	import Productivity from '$lib/images/productivity.svg';
 	import Accessibility from '$lib/images/accessibility.svg';
+	import Collaboration from '$lib/images/github.svg';
+	import Progress from '$lib/images/simplicity.svg';
+	import Priorities from '$lib/images/productivity.svg';
 </script>
 
 <Banner>
@@ -80,12 +83,12 @@
 	<Section title="What does TaskFlow do?" class="mt-30 text-center">
 		<p class="text-gray-500">TaskFlow allows users to:</p>
 		<div class="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2">
-			<ListCard title="Create and manage projects" />
-			<ListCard title="Add and track tasks" />
-			<ListCard title="Monitor progress easily" />
-			<ListCard title="Stay focused on priorities" />
-			<ListCard title="Collaborate with team members" />
-			<ListCard title="Access projects from anywhere" />
+			<ListCard title="Create and manage projects" icon={Collaboration} />
+			<ListCard title="Add and track tasks" icon={Progress} />
+			<ListCard title="Monitor progress easily" icon={Progress} />
+			<ListCard title="Stay focused on priorities" icon={Priorities} />
+			<ListCard title="Collaborate with team members" icon={Collaboration} />
+			<ListCard title="Access projects from anywhere" icon={Accessibility} />
 		</div>
 	</Section>
 	<div></div>
