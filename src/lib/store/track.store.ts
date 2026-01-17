@@ -11,3 +11,6 @@ export const urlAudio = derived(currentTrack, $currentTrack => $currentTrack?.ur
 
 export const isPlayAudio = derived(currentTrack, $currentTrack => $currentTrack?.isPlay);
 
+export const timeMusic = writable(0);
+
+export const timeTotal = writable(0);

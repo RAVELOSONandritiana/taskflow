@@ -1,19 +1,11 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import Dialog from '$lib/components/user/app/Dialog.svelte';
 	import Button from '$lib/components/user/Button.svelte';
-	import { projects } from '$lib/store/project.store';
+	import { projects, type ProjectI } from '$lib/store/project.store';
+	import { setContext } from 'svelte';
 
-	let {
-		id,
-		src = undefined,
-		title,
-		description = undefined
-	}: {
-		id: number;
-		src?: string;
-		title: string;
-		description?: string;
-	} = $props();
+	let { id, src = undefined, title, description = undefined }: ProjectI = $props();
 	let abr = $state('');
 	let open = $state(false);
 	let showImage = $state(false);
@@ -100,7 +92,7 @@
 			on:submit|preventDefault={async (e) => {
 				const data = new FormData(e.currentTarget);
 				data.append('id', `${id}`);
-				data.append('id_user','1');
+				data.append('id_user', '1');
 				if (file) {
 					data.append('image', file);
 				}
@@ -114,7 +106,6 @@
 				};
 				xhr.onload = () => {
 					const json = xhr.response;
-					console.log(JSON.parse(json.data));
 					src = JSON.parse(json.data)[JSON.parse(json.data)[0].filepath] ?? src;
 					const object = Object.fromEntries(data.entries());
 					title = object.title as string;
@@ -276,6 +267,11 @@
 		</p>
 	</div>
 	<div>
-		<Button class="float-end mt-2">Manage</Button>
+		<Button
+			class="float-end mt-2"
+			on:press={() => {
+				goto('/app/project/' + id);
+			}}>Manage</Button
+		>
 	</div>
 </div>

@@ -5,8 +5,8 @@
 
 <section>
 	<div class="mx-10 md:mx-30 max-w-7xl space-y-10 py-8 text-center md:py-16">
-		<h4 class="text-3xl font-bold md:text-5xl">Contact Us</h4>
-		<p class="mx-auto max-w-sm text-gray-400">
+		<h4 class="text-3xl font-bold md:text-5xl dark:text-white">Contact Us</h4>
+		<p class="mx-auto max-w-sm text-gray-400 dark:text-gray-300">
 			We're here to help. Send us a message and we'll get back to you quickly.
 		</p>
 		<div class="mx-auto mt-10 max-w-md space-y-10">

@@ -2,20 +2,11 @@ import fs from 'fs/promises';
 import path from 'path';
 import type { PageServerLoad, Actions } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, fetch }) => {
     const user_id = locals.user?.id;
-    if (!user_id) return { files: [] };
-
-    const pathdir = path.join('uploads', `${user_id}/music`);
-    await fs.mkdir(pathdir, { recursive: true });
-
-    const fichiers = await fs.readdir(pathdir);
-    const files = fichiers.map((f) => ({
-        url: `${import.meta.env.VITE_SERVER_FILES}/${user_id}/music/${encodeURIComponent(f)}`,
-        title: f
-    }));
-
-    return { files };
+    const data = await fetch(`/api/music/${user_id}`);
+    const files = await data.json();
+    return { files }
 };
 
 export const actions: Actions = {

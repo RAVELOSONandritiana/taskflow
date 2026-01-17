@@ -39,7 +39,7 @@
 
 <section class="flex h-screen flex-col">
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<header class="flex h-16 items-center justify-between bg-white px-16 shadow-sm">
+	<header class="z-11 flex h-16 items-center justify-between bg-white px-16 shadow-sm">
 		<a href="/app" class="flex items-center justify-center">
 			<img src={Logo} alt="Taskflow logo" class="mr-5 h-6" />
 			<strong class="text-xl"> TaskFlow </strong>
@@ -128,33 +128,60 @@
 		<div class="space-y-4 overflow-auto rounded-lg border-r border-gray-400 p-4 lg:w-50">
 			<ul>
 				{#each routes as route}
-					<a href={route.path}>
-						<li
-							class="mt-2 flex cursor-pointer items-center space-x-4 rounded-sm p-2 transition-colors duration-300 hover:bg-gray-100 {$page
-								.url.pathname == route.path
-								? 'border-r-2 border-indigo-400 bg-gray-200 hover:bg-gray-200'
-								: ''}"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								class="size-5 opacity-75 transition-colors duration-300 {$page.url.pathname ==
-								route.path
-									? 'text-indigo-600'
+					{#if route.path == '/app'}
+						<a href={route.path}>
+							<li
+								class="mt-2 flex cursor-pointer items-center space-x-4 rounded-sm p-2 transition-colors duration-300 hover:bg-gray-100 {$page
+									.url.pathname == route.path
+									? 'border-r-2 border-indigo-400 bg-gray-200 hover:bg-gray-200'
 									: ''}"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-								stroke-width="2"
 							>
-								{@html route.img}
-							</svg>
-							<h4 class="font-medium text-gray-800">{route.name}</h4>
-						</li>
-					</a>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="size-5 opacity-75 transition-colors duration-300 {$page.url.pathname ==
+									'/app'
+										? 'text-indigo-600'
+										: ''}"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									{@html route.img}
+								</svg>
+								<h4 class="font-medium text-gray-800">{route.name}</h4>
+							</li>
+						</a>
+					{:else}
+						<a href={route.path}>
+							<li
+								class="mt-2 flex cursor-pointer items-center space-x-4 rounded-sm p-2 transition-colors duration-300 hover:bg-gray-100 {$page.url.pathname.startsWith(
+									route.path
+								)
+									? 'border-r-2 border-indigo-400 bg-gray-200 hover:bg-gray-200'
+									: ''}"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="size-5 opacity-75 transition-colors duration-300 {$page.url.pathname ==
+									route.path
+										? 'text-indigo-600'
+										: ''}"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									{@html route.img}
+								</svg>
+								<h4 class="font-medium text-gray-800">{route.name}</h4>
+							</li>
+						</a>
+					{/if}
 				{/each}
 			</ul>
 		</div>
-		<div class="flex-1 overflow-auto p-4">
+		<div class="flex-1 overflow-auto">
 			<slot />
 		</div>
 	</div>

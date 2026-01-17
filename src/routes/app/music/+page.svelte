@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { v4 } from 'uuid';
 	import Music from '$lib/components/user/music/Music.svelte';
 	import { page } from '$app/stores';
 	import { id_user } from '$lib/store/id_user.store';
@@ -10,10 +11,11 @@
 	let { data } = $props();
 	// svelte-ignore state_referenced_locally
 	let files = $state(
-		data.files.map((f) => {
-			return { ...f, _key: crypto.randomUUID() };
+		data.files.map((f: any) => {
+			return { ...f, _key: v4() };
 		})
 	);
+	let grid = $state(true);
 	// svelte-ignore state_referenced_locally
 	// svelte-ignore state_referenced_locally
 	let filteredFiles = $state(files);
@@ -24,7 +26,7 @@
 	let previewType: string = $state('audio');
 	let search: string = $state($page.url.searchParams.get('q') ?? '');
 	$effect(() => {
-		filteredFiles = files.filter((f) => f.title.toLowerCase().includes(search.toLowerCase()));
+		filteredFiles = files.filter((f: any) => f.title.toLowerCase().includes(search.toLowerCase()));
 		goto(`?q=${encodeURIComponent(search)}`, {
 			replaceState: true,
 			noScroll: true,
@@ -52,6 +54,70 @@
 	}
 </script>
 
+<Header>
+	<span class="flex items-center space-x-2">
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			aria-hidden="true"
+			data-slot="icon"
+			class="w-5 text-blue-500"
+		>
+			<path
+				fill-rule="evenodd"
+				d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm14.024-.983a1.125 1.125 0 0 1 0 1.966l-5.603 3.113A1.125 1.125 0 0 1 9 15.113V8.887c0-.857.921-1.4 1.671-.983l5.603 3.113Z"
+				clip-rule="evenodd"
+			/>
+		</svg>
+		<p class="font-bold">player</p>
+	</span>
+	<input
+		type="search"
+		bind:value={search}
+		placeholder="search music"
+		class="rounded-md border border-gray-400 bg-gray-100 px-4 py-1 outline-none focus:w-80 focus:border-none focus:ring-2 focus:ring-indigo-500
+"
+	/>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<!-- svelte-ignore event_directive_deprecated -->
+	<div on:click={() => (grid = !grid)} class="cursor-pointer">
+		{#if !grid}
+			<Tooltip text="list">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					aria-hidden="true"
+					data-slot="icon"
+					class=" h-5 w-5"
+				>
+					<path
+						d="M5.625 3.75a2.625 2.625 0 1 0 0 5.25h12.75a2.625 2.625 0 0 0 0-5.25H5.625ZM3.75 11.25a.75.75 0 0 0 0 1.5h16.5a.75.75 0 0 0 0-1.5H3.75ZM3 15.75a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75ZM3.75 18.75a.75.75 0 0 0 0 1.5h16.5a.75.75 0 0 0 0-1.5H3.75Z"
+					/>
+				</svg>
+			</Tooltip>
+		{:else}
+			<Tooltip text="grid">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					aria-hidden="true"
+					data-slot="icon"
+					class=" h-5 w-5"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M3 6a3 3 0 0 1 3-3h2.25a3 3 0 0 1 3 3v2.25a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6Zm9.75 0a3 3 0 0 1 3-3H18a3 3 0 0 1 3 3v2.25a3 3 0 0 1-3 3h-2.25a3 3 0 0 1-3-3V6ZM3 15.75a3 3 0 0 1 3-3h2.25a3 3 0 0 1 3 3V18a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-2.25Zm9.75 0a3 3 0 0 1 3-3H18a3 3 0 0 1 3 3V18a3 3 0 0 1-3 3h-2.25a3 3 0 0 1-3-3v-2.25Z"
+						clip-rule="evenodd"
+					/>
+				</svg>
+			</Tooltip>
+		{/if}
+	</div>
+</Header>
 <Dialog {open} onClose={() => (open = false)}>
 	<!-- svelte-ignore event_directive_deprecated -->
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -79,7 +145,7 @@
 				files.push({
 					url: JSON.parse(res.data)[JSON.parse(res.data)[0].url],
 					title: JSON.parse(res.data)[JSON.parse(res.data)[0].title],
-					_key: crypto.randomUUID()
+					_key: v4()
 				});
 
 				if (progress == 100) {
@@ -169,50 +235,9 @@
 	</svg>
 </FloatingButton>
 
-<section class="flex flex-col">
-	<Header>
-		<span class="flex items-center space-x-2">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				viewBox="0 0 24 24"
-				fill="currentColor"
-				aria-hidden="true"
-				data-slot="icon"
-				class="w-5 text-blue-500"
-			>
-				<path
-					fill-rule="evenodd"
-					d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm14.024-.983a1.125 1.125 0 0 1 0 1.966l-5.603 3.113A1.125 1.125 0 0 1 9 15.113V8.887c0-.857.921-1.4 1.671-.983l5.603 3.113Z"
-					clip-rule="evenodd"
-				/>
-			</svg>
-			<p class="font-bold">player</p>
-		</span>
-		<input
-			type="search"
-			bind:value={search}
-			placeholder="search music"
-			class="rounded-md border border-gray-400 bg-gray-100 px-4 py-1 outline-none focus:w-80 focus:border-none focus:ring-2 focus:ring-indigo-500
-	"
-		/>
-		<Tooltip text="view">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				viewBox="0 0 24 24"
-				fill="currentColor"
-				aria-hidden="true"
-				data-slot="icon"
-				class=" h-5 w-5"
-			>
-				<path
-					fill-rule="evenodd"
-					d="M7.491 5.992a.75.75 0 0 1 .75-.75h12a.75.75 0 1 1 0 1.5h-12a.75.75 0 0 1-.75-.75ZM7.49 11.995a.75.75 0 0 1 .75-.75h12a.75.75 0 0 1 0 1.5h-12a.75.75 0 0 1-.75-.75ZM7.491 17.994a.75.75 0 0 1 .75-.75h12a.75.75 0 1 1 0 1.5h-12a.75.75 0 0 1-.75-.75ZM2.24 3.745a.75.75 0 0 1 .75-.75h1.125a.75.75 0 0 1 .75.75v3h.375a.75.75 0 0 1 0 1.5H2.99a.75.75 0 0 1 0-1.5h.375v-2.25H2.99a.75.75 0 0 1-.75-.75ZM2.79 10.602a.75.75 0 0 1 0-1.06 1.875 1.875 0 1 1 2.652 2.651l-.55.55h.35a.75.75 0 0 1 0 1.5h-2.16a.75.75 0 0 1-.53-1.281l1.83-1.83a.375.375 0 0 0-.53-.53.75.75 0 0 1-1.062 0ZM2.24 15.745a.75.75 0 0 1 .75-.75h1.125a1.875 1.875 0 0 1 1.501 2.999 1.875 1.875 0 0 1-1.501 3H2.99a.75.75 0 0 1 0-1.501h1.125a.375.375 0 0 0 .036-.748H3.74a.75.75 0 0 1-.75-.75v-.002a.75.75 0 0 1 .75-.75h.411a.375.375 0 0 0-.036-.748H2.99a.75.75 0 0 1-.75-.75Z"
-					clip-rule="evenodd"
-				/>
-			</svg>
-		</Tooltip>
-	</Header>
-	{#if filteredFiles.length != 0}
+<section class="px-4">
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	{#if !grid && filteredFiles.length != 0}
 		<table class="my-4 min-w-full divide-y rounded-md border border-gray-100">
 			<thead>
 				<tr>
@@ -224,11 +249,20 @@
 			<tbody>
 				{#each filteredFiles as file (file._key)}
 					{#if file.title.endsWith('mp3')}
-						<Music title={file.title} url={file.url} />
+						<Music title={file.title} url={file.url} {grid} />
 					{/if}
 				{/each}
 			</tbody>
 		</table>
+	{/if}
+	{#if grid == true}
+		<div class="mt-4 grid grid-cols-2 gap-6 overflow-auto md:grid-cols-4 lg:grid-cols-8">
+			{#each filteredFiles as file (file._key)}
+				{#if file.title.endsWith('mp3')}
+				<Music title={file.title} url={file.url} {grid} />
+				{/if}
+			{/each}
+		</div>
 	{/if}
 	<div class="mx-auto mt-10 flex items-center justify-center">
 		{#if filteredFiles.length == 0 && search == ''}

@@ -1,18 +1,25 @@
 <script lang="ts">
-	import { urlAudio, isPlayAudio, currentTrack } from '$lib/store/track.store';
+	import {
+		urlAudio,
+		isPlayAudio,
+		currentTrack,
+		timeMusic,
+	} from '$lib/store/track.store';
 	import Sidemenu from '$lib/components/user/app/Sidemenu.svelte';
 	import '../layout.css';
 	let { children } = $props();
 	let currentAudio: HTMLAudioElement | null = null;
 	$effect(() => {
 		if ($urlAudio) {
-			console.log($urlAudio);
-			if (currentAudio) {
+			if (currentAudio != null) {
 				currentAudio.pause();
 				currentAudio = null;
 			}
 			currentAudio = new Audio($urlAudio);
 			currentAudio.play();
+			currentAudio.addEventListener('timeupdate', () => {
+				timeMusic.set(currentAudio!.currentTime);
+			});
 
 			currentAudio.onended = (e) => {
 				currentAudio?.pause();

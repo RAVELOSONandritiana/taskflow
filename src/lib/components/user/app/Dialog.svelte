@@ -16,7 +16,7 @@
 {#if open}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="fixed inset-0 flex items-center justify-center bg-black/50 z-10" on:click={onClose}>
+	<div class="fixed inset-0 flex items-center justify-center bg-black/50 z-100" on:click={onClose}>
 		<slot />
 	</div>
 {/if}

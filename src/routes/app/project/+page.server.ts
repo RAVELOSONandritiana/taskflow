@@ -7,25 +7,25 @@ import path from "path";
 export const load: PageServerLoad = async () => {
     const res: ProjectI[] = [
         {
-            id: 1,
+            id: '1',
             src: undefined,
             title: 'sharingan',
             description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Laborum error debitis sint accusantium placeat voluptatibus voluptas illo quia consectetur nihil reprehenderit itaque iusto rem dolore,fuga nostrum nisi autem impedit"
         },
         {
-            id: 2,
+            id: '2',
             src: undefined,
             title: 'chrema',
             description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Laborum error debitis sint accusantium placeat voluptatibus voluptas illo quia consectetur nihil reprehenderit itaque iusto rem dolore,fuga nostrum nisi autem impedit"
         },
         {
-            id: 3,
+            id: '3',
             src: undefined,
             title: 'Project Title',
             description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Laborum error debitis sint accusantium placeat voluptatibus voluptas illo quia consectetur nihil reprehenderit itaque iusto rem dolore,fuga nostrum nisi autem impedit"
         },
         {
-            id: 4,
+            id: '4',
             src: undefined,
             title: 'Project Title',
             description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Laborum error debitis sint accusantium placeat voluptatibus voluptas illo quia consectetur nihil reprehenderit itaque iusto rem dolore,fuga nostrum nisi autem impedit"
