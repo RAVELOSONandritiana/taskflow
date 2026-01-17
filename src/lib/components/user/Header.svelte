@@ -27,7 +27,7 @@
 				<img src={Logo} alt="Taskflow logo" class="h-6 mr-5" />
 				<strong class="text-xl"> TaskFlow </strong>
 			</a>
-			<div class="flex">
+			<div class="flex items-center">
 				<nav class="hidden list-none space-x-10 px-14 md:flex md:items-center md:justify-center">
 					{#each links as link}
 						<a
@@ -79,17 +79,19 @@
 		</div>
 	</div>
 	{#if isOpen}
-		<div class="flex list-none flex-col px-5 space-y-2 md:hidden">
+		<div class="flex list-none flex-col px-5 space-y-2 md:hidden bg-white dark:bg-gray-950 shadow-lg">
 			{#each links as link}
 				<a
 					href={link.path}
 					class={$page.url.pathname === link.path ? 'text-indigo-600 dark:text-indigo-500' : 'text-black dark:text-white'}
 				>
-					<li class="cursor-pointer hover:text-indigo-400">{link.label}</li>
+					<li class="cursor-pointer hover:text-indigo-400 px-4 py-2">{link.label}</li>
 				</a>
 			{/each}
-			<Switch />
-			<div class="mb-2 flex space-x-4 sm:hidden">
+			<div class="px-4 py-2">
+				<Switch />
+			</div>
+			<div class="mb-2 flex space-x-4 sm:hidden px-4 py-2">
 				<div class="space-x-4 sm:block sm:space-x-6 lg:space-x-8">
 					<Button>Sign In</Button>
 					<Button class="border-sm border bg-white text-black! hover:bg-gray-100!">Sign Up</Button>
