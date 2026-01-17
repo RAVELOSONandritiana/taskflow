@@ -7,6 +7,7 @@
 	import Dialog from '$lib/components/user/app/Dialog.svelte';
 	import ProjectCard from '$lib/components/user/app/ProjectCard.svelte';
 	import { goto } from '$app/navigation';
+	import { theme } from '$lib/store/theme.store';
 	export let data;
 
 	if ($projects.length === 0) {
@@ -31,7 +32,7 @@
 	let open = false;
 </script>
 
-<div class="p-4">
+<div class="p-4" class:dark={$theme}>
 	<div class="flex items-center justify-between">
 		<Title>Manage your project here!</Title>
 		<input

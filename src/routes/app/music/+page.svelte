@@ -8,6 +8,7 @@
 	import Header from '$lib/components/user/music/Header.svelte';
 	import Tooltip from '$lib/components/user/Tooltip.svelte';
 	import { goto } from '$app/navigation';
+	import { theme } from '$lib/store/theme.store';
 	let { data } = $props();
 	// svelte-ignore state_referenced_locally
 	let files = $state(
@@ -235,7 +236,7 @@
 	</svg>
 </FloatingButton>
 
-<section class="px-4">
+<section class="px-4" class:dark={$theme}>
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	{#if !grid && filteredFiles.length != 0}
 		<table class="my-4 min-w-full divide-y rounded-md border border-gray-100">

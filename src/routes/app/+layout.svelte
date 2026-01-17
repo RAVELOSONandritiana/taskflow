@@ -5,6 +5,7 @@
 		currentTrack,
 		timeMusic,
 	} from '$lib/store/track.store';
+	import { theme } from '$lib/store/theme.store';
 	import Sidemenu from '$lib/components/user/app/Sidemenu.svelte';
 	import '../layout.css';
 	let { children } = $props();
@@ -40,7 +41,7 @@
 	});
 </script>
 
-<div class="app">
+<div class="app" class:dark={$theme}>
 	<Sidemenu>
 		<main>{@render children()}</main>
 	</Sidemenu>
