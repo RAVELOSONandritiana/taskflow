@@ -133,7 +133,7 @@
 	</div>
 
 	<!-- Floating Toolbar -->
-	<div class="absolute right-6 top-6 z-20 flex flex-col gap-2">
+	<div class="absolute right-6 top-6 z-20 flex flex-col gap-2" onclick={(e) => e.stopPropagation()}>
 		<button 
 			onclick={() => openAddNode = true}
 			class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 active:scale-95 dark:shadow-none"
