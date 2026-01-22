@@ -29,6 +29,16 @@
 	let { team, onAddMember }: { team: Team | null, onAddMember: () => void } = $props();
 	let newMessage = $state('');
 	let showMembers = $state(false);
+	let chatContainer = $state<HTMLDivElement>();
+
+	$effect(() => {
+		if (chatContainer && team?.messages.length) {
+			chatContainer.scrollTo({
+				top: chatContainer.scrollHeight,
+				behavior: 'smooth'
+			});
+		}
+	});
 
 	function sendMessage(e: SubmitEvent) {
 		e.preventDefault();
@@ -97,7 +107,7 @@
 		</header>
 
 		<!-- Chat Content -->
-		<div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+		<div class="flex-1 overflow-y-auto p-6 custom-scrollbar" bind:this={chatContainer}>
 			{#each team.messages as msg (msg.id)}
 				<MessageItem 
 					sender={msg.sender} 

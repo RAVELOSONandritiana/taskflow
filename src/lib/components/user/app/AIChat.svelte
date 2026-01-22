@@ -36,9 +36,19 @@
 	let isTyping = $state(false);
 	let showHelp = $state(false);
 	let showSettings = $state(false);
+	let chatContainer = $state<HTMLDivElement>();
 	
 	let selectedProviderId = $state<'local' | 'puter'>('puter');
 	let selectedProvider = $derived(providers.find(p => p.id === selectedProviderId)!);
+
+	$effect(() => {
+		if (chatContainer && (messages.length || isTyping)) {
+			chatContainer.scrollTo({
+				top: chatContainer.scrollHeight,
+				behavior: 'smooth'
+			});
+		}
+	});
 
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
@@ -148,7 +158,7 @@
 			<button 
 				onclick={() => showSettings = true}
 				class="group flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-gray-400 transition-all hover:bg-white hover:text-gray-600 hover:shadow-md dark:bg-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-				title="Provider Info"
+				aria-label="Provider Info"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform group-hover:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -158,7 +168,7 @@
 			<button 
 				onclick={() => showHelp = true}
 				class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-all hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400"
-				title="Setup Guide"
+				aria-label="Setup Guide"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
@@ -168,7 +178,7 @@
 	</header>
 
 	<!-- Chat History -->
-	<div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+	<div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar" bind:this={chatContainer}>
 		{#each messages as msg (msg.id)}
 			<MessageItem 
 				sender={msg.role === 'user' ? 'You' : 'Assistant'}
@@ -214,6 +224,7 @@
 			<button 
 				type="submit"
 				disabled={isTyping || !newMessage.trim()}
+				aria-label="Send message"
 				class="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 hover:shadow-indigo-200 disabled:opacity-50 disabled:scale-95 active:scale-90 dark:shadow-none"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -226,6 +237,8 @@
 
 <!-- Simple Help Modal -->
 <Dialog bind:open={showHelp} onClose={() => showHelp = false}>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div 
 		onclick={(e) => e.stopPropagation()}
 		class="flex w-full max-w-lg flex-col space-y-8 rounded-3xl border border-gray-100 bg-white p-10 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
@@ -269,6 +282,8 @@
 
 <!-- Info Modal -->
 <Dialog bind:open={showSettings} onClose={() => showSettings = false}>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div 
 		onclick={(e) => e.stopPropagation()}
 		class="flex w-full max-w-sm flex-col space-y-6 rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
