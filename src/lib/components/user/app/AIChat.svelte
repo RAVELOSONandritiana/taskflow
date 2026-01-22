@@ -85,7 +85,6 @@
 				addMessage(aiContent);
 			} else {
 				// Use Puter.js v2 SDK
-				// svelte-ignore lib_not_found
 				// @ts-ignore
 				if (typeof puter !== 'undefined') {
 					// @ts-ignore
