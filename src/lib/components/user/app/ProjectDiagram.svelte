@@ -196,6 +196,7 @@
 			<div 
 				onpointerdown={(e) => onPointerDown(e, node.id)}
 				onpointerup={(e) => onPointerUp(e, node.id)}
+				onclick={(e) => e.stopPropagation()}
 				class="absolute flex flex-col items-center justify-center select-none rounded-2xl border-2 p-5 transition-all
 				{selectedElement?.id === node.id ? 'border-indigo-500 shadow-xl scale-105' : 'border-transparent shadow-sm hover:shadow-md'}
 				{node.type === 'start' ? 'bg-green-50/80 dark:bg-green-900/10' : node.type === 'end' ? 'bg-red-50/80 dark:bg-red-900/10' : node.type === 'condition' ? 'bg-orange-50/80 dark:bg-orange-900/10' : 'bg-white/80 dark:bg-gray-800/80'} backdrop-blur-md"
