@@ -49,8 +49,8 @@
 		class="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-gray-100 px-6 backdrop-blur-xl bg-white/75 dark:border-gray-800 dark:bg-gray-950/75"
 	>
 		<a href="/app" class="group flex items-center gap-3">
-			<div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500 shadow-indigo-200 transition-transform group-hover:scale-105 dark:shadow-none">
-				<img src={Logo} alt="Taskflow" class="h-6 w-6 invert brightness-0" />
+			<div class="flex h-9 w-9 items-center justify-center shadow-indigo-200 transition-transform group-hover:scale-105 dark:shadow-none">
+				<img src={Logo} alt="Taskflow" class="h-6 w-6" />
 			</div>
 			<div class="flex flex-col">
 				<strong class="text-lg font-bold leading-none tracking-tight text-gray-900 dark:text-white">TaskFlow</strong>

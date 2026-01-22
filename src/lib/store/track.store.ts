@@ -14,3 +14,5 @@ export const isPlayAudio = derived(currentTrack, $currentTrack => $currentTrack?
 export const timeMusic = writable(0);
 
 export const timeTotal = writable(0);
+
+export const titleStore = writable<string|null>(null);
