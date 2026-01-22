@@ -4,13 +4,43 @@
 	import KanbanBoard from '$lib/components/user/app/KanbanBoard.svelte';
 	import ProjectDiagram from '$lib/components/user/app/ProjectDiagram.svelte';
 	import Title from '$lib/components/user/app/Title.svelte';
+	import Dialog from '$lib/components/user/app/Dialog.svelte';
 	import Avatar from '$lib/images/solo.png';
 	import { fade, fly } from 'svelte/transition';
 	
 	const id_project = $page.params.id_project;
-	let project = $derived($projects.find(p => p.id === id_project) || { title: 'Project Not Found', description: '' });
+	let project = $derived($projects.find(p => p.id === id_project) || { id: id_project, title: 'Project Not Found', description: '' });
 	
 	let activeTab = $state('tasks'); // 'overview', 'tasks', 'diagram'
+	
+	let showSettings = $state(false);
+	let showShare = $state(false);
+	let isCopied = $state(false);
+
+	let editTitle = $state('');
+	let editDesc = $state('');
+
+	// Initialize edit fields when project data changes
+	$effect(() => {
+		if (project) {
+			editTitle = project.title;
+			editDesc = project.description || '';
+		}
+	});
+
+	function saveSettings() {
+		projects.update(all => all.map(p => 
+			p.id === id_project ? { ...p, title: editTitle, description: editDesc } : p
+		));
+		showSettings = false;
+	}
+
+	function copyShareLink() {
+		const url = window.location.href;
+		navigator.clipboard.writeText(url);
+		isCopied = true;
+		setTimeout(() => isCopied = false, 2000);
+	}
 
 	// Simulated Data for Overview
 	const stats = [
@@ -48,10 +78,16 @@
 			</div>
 			
 			<div class="flex gap-3">
-				<button class="rounded-xl border border-gray-100 bg-white px-5 py-2.5 text-xs font-bold transition-all hover:bg-gray-50 active:scale-95 dark:border-gray-800 dark:bg-gray-900 dark:hover:bg-gray-800">
+				<button 
+					onclick={() => showSettings = true}
+					class="rounded-xl border border-gray-100 bg-white px-5 py-2.5 text-xs font-bold transition-all hover:bg-gray-50 active:scale-95 dark:border-gray-800 dark:bg-gray-900 dark:hover:bg-gray-800"
+				>
 					Settings
 				</button>
-				<button class="rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-black text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 active:scale-95 dark:shadow-none">
+				<button 
+					onclick={() => showShare = true}
+					class="rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-black text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 active:scale-95 dark:shadow-none"
+				>
 					Share Project
 				</button>
 			</div>
@@ -67,7 +103,7 @@
 					{tab}
 					{#if activeTab === tab}
 						<div 
-							layout:fly={{ y: 2, duration: 300 }}
+							transition:fly={{ y: 2, duration: 300 }}
 							class="absolute bottom-0 h-1 w-full rounded-t-full bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.8)]"
 						></div>
 					{/if}
@@ -173,7 +209,10 @@
 					<section class="rounded-[2rem] border border-gray-100 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900/50">
 						<div class="mb-6 flex items-center justify-between">
 							<h3 class="text-sm font-black uppercase tracking-widest text-gray-400">Project Team</h3>
-							<button class="h-8 w-8 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30">
+							<button 
+								class="h-8 w-8 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30"
+								aria-label="Add Team Member"
+							>
 								<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m6-6H6" /></svg>
 							</button>
 						</div>
@@ -191,7 +230,10 @@
 											<p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{member.role}</p>
 										</div>
 									</div>
-									<button class="opacity-0 group-hover:opacity-100 transition-all text-gray-400 hover:text-indigo-500">
+									<button 
+										class="opacity-0 group-hover:opacity-100 transition-all text-gray-400 hover:text-indigo-500"
+										aria-label="Member Options"
+									>
 										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>
 									</button>
 								</div>
@@ -223,6 +265,115 @@
 		{/if}
 	</main>
 </div>
+
+<!-- Project Settings Dialog -->
+<Dialog bind:open={showSettings} onClose={() => showSettings = false}>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<form 
+		onclick={(e) => e.stopPropagation()}
+		onsubmit={(e) => { e.preventDefault(); saveSettings(); }}
+		class="flex w-full max-w-sm flex-col space-y-6 rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
+	>
+		<div class="space-y-1">
+			<h2 class="text-2xl font-black text-gray-900 dark:text-white">Project Settings</h2>
+			<p class="text-xs font-bold text-indigo-500 uppercase tracking-widest">Update project details</p>
+		</div>
+
+		<div class="space-y-4">
+			<label class="block">
+				<span class="mb-2 block text-[11px] font-black uppercase tracking-widest text-gray-400">Project Title</span>
+				<input 
+					type="text" 
+					bind:value={editTitle}
+					required
+					class="w-full rounded-2xl border-none bg-gray-100 px-4 py-3 text-sm font-bold ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-gray-700"
+				/>
+			</label>
+
+			<label class="block">
+				<span class="mb-2 block text-[11px] font-black uppercase tracking-widest text-gray-400">Description</span>
+				<textarea 
+					bind:value={editDesc}
+					rows="3"
+					class="w-full rounded-2xl border-none bg-gray-100 px-4 py-3 text-sm font-bold ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-gray-700"
+				></textarea>
+			</label>
+		</div>
+
+		<div class="flex flex-col gap-2.5 pt-2">
+			<button type="submit" class="w-full rounded-2xl bg-indigo-600 py-3.5 text-sm font-black text-white shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 dark:shadow-none">
+				Save Changes
+			</button>
+			<button type="button" onclick={() => showSettings = false} class="w-full rounded-2xl bg-gray-50 py-3 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800">
+				Cancel
+			</button>
+		</div>
+	</form>
+</Dialog>
+
+<!-- Share Project Dialog -->
+<Dialog bind:open={showShare} onClose={() => showShare = false}>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div 
+		onclick={(e) => e.stopPropagation()}
+		class="flex w-full max-w-sm flex-col space-y-6 rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
+	>
+		<div class="space-y-1">
+			<h2 class="text-2xl font-black text-gray-900 dark:text-white">Share Project</h2>
+			<p class="text-xs font-bold text-indigo-500 uppercase tracking-widest">Collaborate with others</p>
+		</div>
+
+		<div class="rounded-2xl bg-gray-50 p-4 dark:bg-gray-900">
+			<p class="mb-2 text-[10px] font-black uppercase tracking-widest text-gray-400">Private Link</p>
+			<div class="flex items-center gap-2 overflow-hidden rounded-xl bg-white p-1 ring-1 ring-gray-100 dark:bg-gray-800 dark:ring-gray-700">
+				<input 
+					type="text" 
+					readonly 
+					value={typeof window !== 'undefined' ? window.location.href : ''} 
+					class="flex-1 border-none bg-transparent px-3 py-1.5 text-xs font-medium text-gray-500 outline-none"
+				/>
+				<button 
+					onclick={copyShareLink}
+					class="flex items-center justify-center rounded-lg bg-indigo-600 px-3 py-2 text-white transition-all hover:bg-indigo-700 active:scale-90"
+				>
+					{#if isCopied}
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+					{:else}
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+					{/if}
+				</button>
+			</div>
+		</div>
+
+		<div class="flex flex-col gap-2">
+			<div class="flex items-center gap-3 rounded-2xl border border-gray-100 p-4 dark:border-gray-800">
+				<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-600 dark:bg-green-900/20">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-7.618 3.04M12 21a9.003 9.003 0 008.367-5.618m0 0L12 18l-8.367-2.618m0 0A9.003 9.003 0 0012 21" /></svg>
+				</div>
+				<div class="flex flex-col">
+					<span class="text-xs font-black text-gray-900 dark:text-white">Public Access</span>
+					<span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Off (Invite only)</span>
+				</div>
+				<button 
+					class="ml-auto h-5 w-9 rounded-full bg-gray-200 p-1 dark:bg-gray-800 transition-colors"
+					aria-label="Toggle Public Access"
+				>
+					<div class="h-3 w-3 rounded-full bg-white shadow-sm"></div>
+				</button>
+			</div>
+		</div>
+
+		<button 
+			onclick={() => showShare = false}
+			class="w-full rounded-2xl bg-gray-900 py-3.5 text-sm font-black text-white transition-all hover:bg-black active:scale-95 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+		>
+			Close Details
+		</button>
+	</div>
+</Dialog>
 
 <style>
 	.custom-scrollbar::-webkit-scrollbar {
