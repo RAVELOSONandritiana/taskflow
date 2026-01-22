@@ -125,7 +125,7 @@
 					type="text" 
 					bind:value={newMessage}
 					placeholder="Type your message..."
-					class="flex-1 rounded-xl border-none bg-gray-100 px-4 py-2.5 text-sm ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-gray-700"
+					class="flex-1 rounded-xl border-none bg-gray-100 px-4 py-2.5 text-sm ring-1 ring-indigo-500/30 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-indigo-500/20"
 				/>
 				<button 
 					type="submit"

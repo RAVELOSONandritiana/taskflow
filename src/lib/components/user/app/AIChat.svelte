@@ -214,7 +214,7 @@
 					type="text" 
 					bind:value={newMessage}
 					placeholder={selectedProviderId === 'local' ? "Message local AI (LM Studio)..." : "Ask Puter Cloud AI anything..."}
-					class="w-full rounded-2xl border-none bg-gray-50 px-6 py-4 text-sm font-medium ring-1 ring-gray-200 transition-all outline-none group-focus-within:ring-2 group-focus-within:ring-indigo-500 dark:bg-gray-900 dark:ring-gray-800"
+					class="w-full rounded-2xl border-none bg-gray-50 px-6 py-4 text-sm font-medium ring-1 ring-indigo-500/30 transition-all outline-none group-focus-within:ring-2 group-focus-within:ring-indigo-500 dark:bg-gray-900 dark:ring-indigo-500/20"
 				/>
 				<div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
 					<span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden md:block">Enter to Send</span>

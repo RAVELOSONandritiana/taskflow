@@ -166,7 +166,7 @@
 					type="search"
 					bind:value={search}
 					placeholder="Search tracks..."
-					class="w-full rounded-xl border-none bg-gray-100 py-2 pr-4 pl-10 text-sm ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-gray-700"
+					class="w-full rounded-xl border-none bg-gray-100 py-2 pr-4 pl-10 text-sm ring-1 ring-indigo-500/30 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-indigo-500/20"
 				/>
 			</div>
 		</div>
