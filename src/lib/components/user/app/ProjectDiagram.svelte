@@ -39,6 +39,9 @@
 	let connectingFromId = $state<string | null>(null);
 	let openAddNode = $state(false);
 	let selectedElement = $state<{ type: 'node' | 'connection'; id: string } | null>(null);
+	
+	let pointerPos = $state({ x: 0, y: 0 });
+	let hoveredNodeId = $state<string | null>(null);
 
 	let newNodeData = $state({
 		label: '',
@@ -47,38 +50,55 @@
 
 	function onPointerDown(e: PointerEvent, id: string) {
 		e.stopPropagation();
-		if (e.shiftKey) {
-			connectingFromId = id;
-		} else {
-			draggingNodeId = id;
-			selectedElement = { type: 'node', id };
-		}
+		draggingNodeId = id;
+		selectedElement = { type: 'node', id };
+		(e.target as HTMLElement).setPointerCapture(e.pointerId);
+	}
+
+	function startConnecting(e: PointerEvent, id: string) {
+		e.stopPropagation();
+		connectingFromId = id;
+		pointerPos = { x: e.clientX, y: e.clientY };
 		(e.target as HTMLElement).setPointerCapture(e.pointerId);
 	}
 
 	function onPointerMove(e: PointerEvent) {
+		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+		pointerPos = { 
+			x: e.clientX - rect.left, 
+			y: e.clientY - rect.top 
+		};
+
 		if (draggingNodeId) {
 			const node = nodes.find((n) => n.id === draggingNodeId);
 			if (node) {
-				const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
 				node.x = e.clientX - rect.left - 70;
 				node.y = e.clientY - rect.top - 35;
 			}
 		}
+
+		if (connectingFromId) {
+			// Find node under pointer
+			const elements = document.elementsFromPoint(e.clientX, e.clientY);
+			const nodeElement = elements.find(el => el.hasAttribute('data-node-id'));
+			hoveredNodeId = nodeElement ? nodeElement.getAttribute('data-node-id') : null;
+		}
 	}
 
-	function onPointerUp(e: PointerEvent, id?: string) {
-		if (connectingFromId && id && connectingFromId !== id) {
+	function onPointerUp(e: PointerEvent) {
+		if (connectingFromId && hoveredNodeId && connectingFromId !== hoveredNodeId) {
 			// Create connection
 			const exists = connections.find(
-				(c) => (c.fromId === connectingFromId && c.toId === id) || (c.fromId === id && c.toId === connectingFromId)
+				(c) => (c.fromId === connectingFromId && c.toId === hoveredNodeId) || 
+					   (c.fromId === hoveredNodeId && c.toId === connectingFromId)
 			);
 			if (!exists) {
-				connections.push({ id: v4(), fromId: connectingFromId, toId: id });
+				connections.push({ id: v4(), fromId: connectingFromId, toId: hoveredNodeId! });
 			}
 		}
 		draggingNodeId = null;
 		connectingFromId = null;
+		hoveredNodeId = null;
 	}
 
 	function addNode() {
@@ -117,6 +137,18 @@
 		
 		return `M ${startX} ${startY} C ${cp1x} ${startY}, ${cp2x} ${endY}, ${endX} ${endY}`;
 	}
+
+	function getGhostPath(from: Node, pointer: { x: number, y: number }) {
+		const startX = from.x + 70;
+		const startY = from.y + 35;
+		const endX = pointer.x;
+		const endY = pointer.y;
+		
+		const cp1x = startX + (endX - startX) / 2;
+		const cp2x = startX + (endX - startX) / 2;
+		
+		return `M ${startX} ${startY} C ${cp1x} ${startY}, ${cp2x} ${endY}, ${endX} ${endY}`;
+	}
 </script>
 
 <div class="relative h-full w-full overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-inner dark:border-gray-800 dark:bg-gray-950">
@@ -125,9 +157,9 @@
 		<h3 class="text-sm font-black uppercase tracking-widest text-gray-400">Diagram Builder</h3>
 		<p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
 			{#if connectingFromId}
-				<span class="animate-pulse">Select target node to link...</span>
+				<span class="animate-pulse">Drag to target node to link...</span>
 			{:else}
-				Drag to move • Shift + Drag to link • Click to select
+				Drag node to move • Drag handle (○) to link • Click to select
 			{/if}
 		</p>
 	</div>
@@ -161,7 +193,7 @@
 	<div 
 		class="h-full w-full touch-none"
 		onpointermove={onPointerMove}
-		onpointerup={(e) => onPointerUp(e)}
+		onpointerup={onPointerUp}
 		onclick={() => selectedElement = null}
 	>
 		<svg class="h-full w-full">
@@ -189,16 +221,32 @@
 					/>
 				{/if}
 			{/each}
+
+			<!-- Ghost Connection Line -->
+			{#if connectingFromId}
+				{@const from = nodes.find(n => n.id === connectingFromId)}
+				{#if from}
+					<path 
+						d={getGhostPath(from, pointerPos)} 
+						fill="none" 
+						stroke="currentColor" 
+						stroke-width="2.5" 
+						stroke-dasharray="8,8"
+						class="text-indigo-500 animate-[dash_10s_linear_infinite]"
+					/>
+				{/if}
+			{/if}
 		</svg>
 
 		{#each nodes as node (node.id)}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div 
 				onpointerdown={(e) => onPointerDown(e, node.id)}
-				onpointerup={(e) => onPointerUp(e, node.id)}
 				onclick={(e) => e.stopPropagation()}
+				data-node-id={node.id}
 				class="absolute flex flex-col items-center justify-center select-none rounded-2xl border-2 p-5 transition-all
 				{selectedElement?.id === node.id ? 'border-indigo-500 shadow-xl scale-105' : 'border-transparent shadow-sm hover:shadow-md'}
+				{hoveredNodeId === node.id && connectingFromId !== node.id ? 'ring-4 ring-indigo-500/30' : ''}
 				{node.type === 'start' ? 'bg-green-50/80 dark:bg-green-900/10' : node.type === 'end' ? 'bg-red-50/80 dark:bg-red-900/10' : node.type === 'condition' ? 'bg-orange-50/80 dark:bg-orange-900/10' : 'bg-white/80 dark:bg-gray-800/80'} backdrop-blur-md"
 				style="left: {node.x}px; top: {node.y}px; width: 140px; height: 70px;"
 			>
@@ -208,8 +256,21 @@
 				</div>
 				<p class="truncate text-xs font-black text-gray-900 dark:text-gray-100">{node.label}</p>
 				
+				<!-- Connection Handle (Only visible on selection) -->
+				{#if selectedElement?.id === node.id}
+					<button 
+						onpointerdown={(e) => startConnecting(e, node.id)}
+						class="absolute -right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg ring-4 ring-white transition-transform hover:scale-125 dark:ring-gray-950"
+						title="Drag to connect"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+						</svg>
+					</button>
+				{/if}
+
 				{#if connectingFromId === node.id}
-					<div class="absolute -inset-2 animate-ping rounded-2xl border-2 border-indigo-500 opacity-20"></div>
+					<div class="absolute -inset-2 animate-pulse rounded-2xl border-2 border-indigo-500"></div>
 				{/if}
 			</div>
 		{/each}
@@ -273,5 +334,10 @@
 <style>
 	:global(body) {
 		overscroll-behavior: none;
+	}
+	@keyframes dash {
+		to {
+			stroke-dashoffset: -100;
+		}
 	}
 </style>
