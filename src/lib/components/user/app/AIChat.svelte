@@ -12,24 +12,22 @@
 	}
 
 	interface Provider {
-		id: 'local' | 'openai' | 'groq';
+		id: 'local' | 'puter';
 		name: string;
-		url: string;
-		requiresKey: boolean;
-		defaultModel: string;
+		url?: string;
+		description: string;
 	}
 
 	const providers: Provider[] = [
-		{ id: 'local', name: 'Local (LM Studio)', url: 'http://localhost:1234/v1/chat/completions', requiresKey: false, defaultModel: 'local-model' },
-		{ id: 'openai', name: 'OpenAI (GPT-4)', url: 'https://api.openai.com/v1/chat/completions', requiresKey: true, defaultModel: 'gpt-4o' },
-		{ id: 'groq', name: 'Groq (Llama 3)', url: 'https://api.groq.com/openai/v1/chat/completions', requiresKey: true, defaultModel: 'llama3-8b-8192' }
+		{ id: 'local', name: 'Private Local (LM Studio)', url: 'http://localhost:1234/v1/chat/completions', description: 'Runs entirely on your machine. Maximum privacy, requires LM Studio.' },
+		{ id: 'puter', name: 'Cloud AI (Puter.js)', description: 'Fast, free, and hosted. No setup required.' }
 	];
 
 	let messages = $state<Message[]>([
 		{
 			id: '1',
 			role: 'assistant',
-			content: 'Hello! I am your local AI assistant. How can I help you today?',
+			content: 'Hello! I am your AI assistant. You can chat with me locally using LM Studio or instantly via Puter Cloud.',
 			time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 		}
 	]);
@@ -39,29 +37,12 @@
 	let showHelp = $state(false);
 	let showSettings = $state(false);
 	
-	let selectedProviderId = $state<'local' | 'openai' | 'groq'>('local');
+	let selectedProviderId = $state<'local' | 'puter'>('puter');
 	let selectedProvider = $derived(providers.find(p => p.id === selectedProviderId)!);
-	
-	let apiKeys = $state({
-		openai: '',
-		groq: ''
-	});
 
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
 		if (!newMessage.trim() || isTyping) return;
-
-		// Check if key is required and provided
-		if (selectedProvider.requiresKey && !apiKeys[selectedProviderId as keyof typeof apiKeys]) {
-			messages.push({
-				id: 'error-' + Date.now(),
-				role: 'assistant',
-				content: `Please provide an API key for ${selectedProvider.name} in the settings.`,
-				time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-			});
-			showSettings = true;
-			return;
-		}
 
 		const userMsg: Message = {
 			id: Math.random().toString(36).substring(7),
@@ -76,49 +57,54 @@
 		isTyping = true;
 
 		try {
-			const headers: Record<string, string> = {
-				'Content-Type': 'application/json'
-			};
+			if (selectedProviderId === 'local') {
+				const response = await fetch(selectedProvider.url!, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						model: 'local-model',
+						messages: messages.map(m => ({ role: m.role, content: m.content })),
+						temperature: 0.7
+					})
+				});
 
-			if (selectedProvider.requiresKey) {
-				headers['Authorization'] = `Bearer ${apiKeys[selectedProviderId as keyof typeof apiKeys]}`;
+				if (!response.ok) throw new Error('Local server is not responding. Please check LM Studio.');
+
+				const data = await response.json();
+				const aiContent = data.choices[0].message.content;
+				addMessage(aiContent);
+			} else {
+				// Use Puter.js v2 SDK
+				// svelte-ignore lib_not_found
+				// @ts-ignore
+				if (typeof puter !== 'undefined') {
+					// @ts-ignore
+					const response = await puter.ai.chat(messages.map(m => ({ role: m.role, content: m.content })));
+					addMessage(response.toString());
+				} else {
+					throw new Error('Puter SDK not loaded. Please refresh the page.');
+				}
 			}
-
-			const response = await fetch(selectedProvider.url, {
-				method: 'POST',
-				headers,
-				body: JSON.stringify({
-					model: selectedProvider.defaultModel,
-					messages: messages.map(m => ({ role: m.role, content: m.content })),
-					temperature: 0.7
-				})
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({}));
-				throw new Error(errorData.error?.message || `Failed to connect to ${selectedProvider.name}`);
-			}
-
-			const data = await response.json();
-			const aiContent = data.choices[0].message.content;
-
-			messages.push({
-				id: Math.random().toString(36).substring(7),
-				role: 'assistant',
-				content: aiContent,
-				time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-			});
 		} catch (error: any) {
 			console.error('LLM Error:', error);
 			messages.push({
 				id: 'error-' + Date.now(),
 				role: 'assistant',
-				content: `Error: ${error.message}. ${selectedProvider.id === 'local' ? 'Please make sure LM Studio is running at ' + selectedProvider.url : 'Please check your API key and connection.'}`,
+				content: `Error: ${error.message}. ${selectedProviderId === 'local' ? 'Make sure LM Studio "Local Server" is started.' : 'Puter.js connection failed.'}`,
 				time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 			});
 		} finally {
 			isTyping = false;
 		}
+	}
+
+	function addMessage(content: string) {
+		messages.push({
+			id: Math.random().toString(36).substring(7),
+			role: 'assistant',
+			content,
+			time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+		});
 	}
 </script>
 
@@ -133,21 +119,21 @@
 			</div>
 			
 			<div class="flex flex-col">
-				<h2 class="text-sm font-bold text-gray-900 dark:text-white">AI Assistant</h2>
-				<div class="flex items-center gap-1.5">
-					<div class="h-1.5 w-1.5 rounded-full {selectedProviderId === 'local' ? 'bg-green-500' : 'bg-blue-500'}"></div>
+				<h2 class="text-sm font-bold text-gray-900 dark:text-white">Intelligent Assistant</h2>
+				<div class="flex items-center gap-1.5 focus-within:animate-pulse">
+					<div class="h-1.5 w-1.5 rounded-full {selectedProviderId === 'local' ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]' : 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]'}"></div>
 					<span class="text-[10px] font-bold uppercase tracking-widest text-gray-500">{selectedProvider.name}</span>
 				</div>
 			</div>
 		</div>
 
-		<!-- Provider Selector -->
-		<div class="flex items-center gap-2">
-			<div class="flex items-center gap-1 rounded-2xl bg-gray-100 p-1 dark:bg-gray-900">
+		<!-- Simplified Provider Selector -->
+		<div class="flex items-center gap-3">
+			<div class="flex items-center gap-1 rounded-2xl bg-gray-50 p-1 dark:bg-gray-900">
 				{#each providers as provider}
 					<button 
 						onclick={() => selectedProviderId = provider.id}
-						class="rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all
+						class="rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-wider transition-all
 						{selectedProviderId === provider.id 
 							? 'bg-white text-indigo-600 shadow-sm dark:bg-gray-800 dark:text-indigo-400' 
 							: 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}"
@@ -157,23 +143,22 @@
 				{/each}
 			</div>
 
-			<div class="h-6 w-[1px] bg-gray-200 dark:bg-gray-800 mx-1"></div>
+			<div class="h-6 w-[1px] bg-gray-200 dark:bg-gray-800"></div>
 
 			<button 
 				onclick={() => showSettings = true}
-				class="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-				title="Settings"
+				class="group flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-gray-400 transition-all hover:bg-white hover:text-gray-600 hover:shadow-md dark:bg-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+				title="Provider Info"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-					<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform group-hover:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
 				</svg>
 			</button>
 			
 			<button 
 				onclick={() => showHelp = true}
-				class="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-				title="Help"
+				class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-all hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400"
+				title="Setup Guide"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
@@ -186,7 +171,7 @@
 	<div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
 		{#each messages as msg (msg.id)}
 			<MessageItem 
-				sender={msg.role === 'user' ? 'You' : 'AI Assistant'}
+				sender={msg.role === 'user' ? 'You' : 'Assistant'}
 				content={msg.content}
 				time={msg.time}
 				isMe={msg.role === 'user'}
@@ -194,14 +179,19 @@
 		{/each}
 		
 		{#if isTyping}
-			<div class="flex items-start gap-3" in:fade>
-				<div class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30">
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+			<div class="flex items-start gap-4" in:fade>
+				<div class="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 animate-pulse">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
 					</svg>
 				</div>
-				<div class="rounded-2xl bg-gray-50 px-4 py-2 text-sm text-gray-500 dark:bg-gray-900">
-					AI is thinking...
+				<div class="rounded-2xl bg-gray-50 px-5 py-3 text-sm font-medium text-gray-500 dark:bg-gray-900 flex items-center gap-2">
+					Processing request...
+					<div class="flex gap-1">
+						<div class="h-1 w-1 bg-gray-400 rounded-full animate-bounce"></div>
+						<div class="h-1 w-1 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+						<div class="h-1 w-1 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+					</div>
 				</div>
 			</div>
 		{/if}
@@ -210,18 +200,21 @@
 	<!-- Input Area -->
 	<footer class="border-t border-gray-100 p-6 dark:border-gray-800">
 		<form onsubmit={handleSubmit} class="mx-auto flex max-w-4xl gap-4">
-			<div class="relative flex-1">
+			<div class="relative flex-1 group">
 				<input 
 					type="text" 
 					bind:value={newMessage}
-					placeholder="Message your local AI..."
-					class="w-full rounded-2xl border-none bg-gray-50 px-6 py-4 text-sm ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-900 dark:ring-gray-800"
+					placeholder={selectedProviderId === 'local' ? "Message local AI (LM Studio)..." : "Ask Puter Cloud AI anything..."}
+					class="w-full rounded-2xl border-none bg-gray-50 px-6 py-4 text-sm font-medium ring-1 ring-gray-200 transition-all outline-none group-focus-within:ring-2 group-focus-within:ring-indigo-500 dark:bg-gray-900 dark:ring-gray-800"
 				/>
+				<div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+					<span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden md:block">Enter to Send</span>
+				</div>
 			</div>
 			<button 
 				type="submit"
 				disabled={isTyping || !newMessage.trim()}
-				class="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 disabled:opacity-50 dark:shadow-none"
+				class="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 hover:shadow-indigo-200 disabled:opacity-50 disabled:scale-95 active:scale-90 dark:shadow-none"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0 1 21.485 12 59.77 59.77 0 0 1 3.27 20.876L5.999 12Zm0 0h7.5" />
@@ -231,36 +224,37 @@
 	</footer>
 </div>
 
-<!-- Help Modal -->
+<!-- Simple Help Modal -->
 <Dialog bind:open={showHelp} onClose={() => showHelp = false}>
 	<div 
 		onclick={(e) => e.stopPropagation()}
-		class="flex w-full max-w-lg flex-col space-y-6 rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
+		class="flex w-full max-w-lg flex-col space-y-8 rounded-3xl border border-gray-100 bg-white p-10 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
 	>
-		<div class="space-y-2 text-center">
-			<div class="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-indigo-50 text-indigo-500 dark:bg-indigo-900/20">
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+		<div class="space-y-3 text-center">
+			<div class="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-50 text-indigo-500 dark:bg-indigo-900/20">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
 				</svg>
 			</div>
-			<h2 class="text-2xl font-black text-gray-900 dark:text-white">Connecting to LM Studio</h2>
-			<p class="text-sm font-medium text-gray-500">Learn how to chat with your local AI models.</p>
+			<h2 class="text-3xl font-black text-gray-900 dark:text-white">AI Setup Guide</h2>
+			<p class="text-sm font-medium text-gray-400 uppercase tracking-widest">Choose your intelligence source</p>
 		</div>
 
-		<div class="space-y-4">
-			<div class="rounded-2xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/50">
-				<h3 class="mb-2 text-xs font-black uppercase tracking-widest text-indigo-500">Step 1: Get LM Studio</h3>
-				<p class="text-sm text-gray-600 dark:text-gray-400">Download and install LM Studio from <b>lmstudio.ai</b>.</p>
+		<div class="grid grid-cols-1 gap-4">
+			<div class="rounded-3xl border border-gray-100 bg-gray-50/50 p-6 dark:border-gray-800 dark:bg-gray-900/50">
+				<h3 class="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-500">
+					<div class="h-2 w-2 rounded-full bg-indigo-500"></div>
+					Option 1: Puter Cloud
+				</h3>
+				<p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">Works instantly! No configuration or API keys needed. Perfect for quick questions and online tasks.</p>
 			</div>
 			
-			<div class="rounded-2xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/50">
-				<h3 class="mb-2 text-xs font-black uppercase tracking-widest text-indigo-500">Step 2: Start Local Server</h3>
-				<p class="text-sm text-gray-600 dark:text-gray-400">Go to the <b>Local Server</b> tab (↔ icon) in LM Studio and click <b>Start Server</b>.</p>
-			</div>
-
-			<div class="rounded-2xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/50">
-				<h3 class="mb-2 text-xs font-black uppercase tracking-widest text-indigo-500">Step 3: Configuration</h3>
-				<p class="text-sm text-gray-600 dark:text-gray-400">Ensure the server is running on <code class="text-indigo-600">localhost:1234</code>. The chat will automatically connect!</p>
+			<div class="rounded-3xl border border-gray-100 bg-gray-50/50 p-6 dark:border-gray-800 dark:bg-gray-900/50">
+				<h3 class="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-500">
+					<div class="h-2 w-2 rounded-full bg-orange-500"></div>
+					Option 2: LM Studio (Local)
+				</h3>
+				<p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">Start the <b>Local Server</b> inside LM Studio on port <b>1234</b>. Your data never leaves your machine.</p>
 			</div>
 		</div>
 
@@ -268,61 +262,39 @@
 			onclick={() => showHelp = false}
 			class="w-full rounded-2xl bg-indigo-600 py-4 text-sm font-black text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 active:scale-95 dark:shadow-none"
 		>
-			Got it, thanks!
+			Ready to Chat
 		</button>
 	</div>
 </Dialog>
 
-<!-- Settings Modal -->
+<!-- Info Modal -->
 <Dialog bind:open={showSettings} onClose={() => showSettings = false}>
 	<div 
 		onclick={(e) => e.stopPropagation()}
-		class="flex w-full max-w-md flex-col space-y-6 rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
+		class="flex w-full max-w-sm flex-col space-y-6 rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
 	>
-		<div class="space-y-2">
-			<h2 class="text-2xl font-black text-gray-900 dark:text-white">AI Provider Settings</h2>
-			<p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Configure your cloud API keys</p>
+		<div class="space-y-1">
+			<h2 class="text-2xl font-black text-gray-900 dark:text-white">{selectedProvider.name}</h2>
+			<p class="text-xs font-bold text-indigo-500 uppercase tracking-widest">Provider Details</p>
 		</div>
 
-		<div class="space-y-6">
-			<!-- OpenAI -->
-			<div class="space-y-3">
-				<div class="flex items-center justify-between">
-					<label class="text-[11px] font-black uppercase tracking-widest text-gray-400">OpenAI API Key</label>
-					<span class="rounded-lg bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/20">Optional</span>
-				</div>
-				<input 
-					type="password" 
-					bind:value={apiKeys.openai}
-					placeholder="sk-..."
-					class="w-full rounded-xl border-none bg-gray-50 px-4 py-3 text-sm ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-900 dark:ring-gray-800"
-				/>
-			</div>
+		<p class="text-sm font-medium leading-relaxed text-gray-500 dark:text-gray-400">
+			{selectedProvider.description}
+		</p>
 
-			<!-- Groq -->
-			<div class="space-y-3">
-				<div class="flex items-center justify-between">
-					<label class="text-[11px] font-black uppercase tracking-widest text-gray-400">Groq API Key</label>
-					<span class="rounded-lg bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/20">Optional</span>
-				</div>
-				<input 
-					type="password" 
-					bind:value={apiKeys.groq}
-					placeholder="gsk-..."
-					class="w-full rounded-xl border-none bg-gray-50 px-4 py-3 text-sm ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-900 dark:ring-gray-800"
-				/>
+		<div class="rounded-2xl bg-gray-50 p-4 dark:bg-gray-900">
+			<div class="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
+				<span>Status</span>
+				<span class="text-green-500">Operational</span>
 			</div>
 		</div>
 
-		<div class="flex flex-col gap-3 pt-2">
-			<button 
-				onclick={() => showSettings = false}
-				class="w-full rounded-2xl bg-indigo-600 py-3 text-sm font-black text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 active:scale-95 dark:shadow-none"
-			>
-				Save Changes
-			</button>
-			<p class="text-center text-[10px] font-medium text-gray-400 italic">Keys are stored temporarily in memory for this session.</p>
-		</div>
+		<button 
+			onclick={() => showSettings = false}
+			class="w-full rounded-2xl bg-gray-900 py-3 text-sm font-black text-white shadow-xl transition-all hover:bg-black active:scale-95 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+		>
+			Close Instance
+		</button>
 	</div>
 </Dialog>
 
