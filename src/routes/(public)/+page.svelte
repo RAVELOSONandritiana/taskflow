@@ -242,7 +242,7 @@
 			<div class="mx-auto mt-4 flex flex-col space-y-4 md:flex-row max-w-md md:space-x-3">
 				<input
 					type="email"
-					class="w-full rounded-md border border-gray-400 px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-600 focus:outline-hidden dark:placeholder:text-slate-300 dark:bg-gray-800 dark:border-gray-700"
+					class="w-full rounded-md border border-gray-400 bg-gray-100 px-4 py-2 text-sm text-gray-700 outline-none transition-all focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
 					placeholder="email address"
 				/>
 				<ShadButton

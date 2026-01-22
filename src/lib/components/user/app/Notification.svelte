@@ -1,48 +1,83 @@
 <script lang="ts">
 	import Logo from '$lib/images/solo.png';
-	export let read: boolean;
-	let visible = true;
-	let moreText = false;
+	import { theme } from '$lib/store/theme.store';
+
+	interface Props {
+		read: boolean;
+		title?: string;
+		subtitle?: string;
+		time?: string;
+		description?: string;
+	}
+
+	let {
+		read = $bindable(),
+		title = 'Notification Title',
+		subtitle = 'Alex Tasker',
+		time = '2m ago',
+		description = 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Quasi recusandae quos eum id, itaque eius mollitia officia dicta.'
+	}: Props = $props();
+
+	let visible = $state(true);
+	let moreText = $state(false);
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 {#if visible}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		class="flex cursor-pointer space-x-4 border-b border-gray-200 {read
-			? 'bg-white'
-			: 'bg-gray-100 hover:bg-white'} px-5 py-2"
-		on:click={() => (read = true)}
+		class="relative flex cursor-pointer gap-4 border-b border-gray-50 p-4 transition-all duration-300 hover:bg-indigo-50/50 dark:border-gray-800 dark:hover:bg-gray-800/50 {read
+			? 'bg-transparent'
+			: 'bg-indigo-50/80 dark:bg-indigo-500/10'}"
+		onclick={() => (read = true)}
 	>
-		<div class="h-16 min-h-16 w-16 min-w-16 overflow-hidden rounded-full">
-			<img src={Logo} alt="logo" />
+		<!-- Unread Indicator -->
+		{#if !read}
+			<div class="absolute left-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]"></div>
+		{/if}
+
+		<div class="relative h-12 w-12 flex-shrink-0">
+			<img src={Logo} alt="sender" class="h-full w-full rounded-full border border-gray-100 object-cover shadow-sm dark:border-gray-700" />
+			<div class="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-green-500 dark:border-gray-900"></div>
 		</div>
-		<div>
-			<div class="flex items-center justify-between">
-				<h4 class="font-bold">title</h4>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 16 16"
-					fill="currentColor"
-					aria-hidden="true"
-					data-slot="icon"
-					class="w-4 cursor-pointer transition-transform duration-100 hover:w-5 hover:text-red-600"
-					on:click={() => (visible = false)}
-				>
-					<path
-						d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"
-					/>
-				</svg>
+
+		<div class="flex-1 min-w-0">
+			<div class="flex items-start justify-between">
+				<div class="flex flex-col">
+					<h4 class="truncate text-[15px] font-semibold text-gray-900 dark:text-gray-100">
+						{title}
+					</h4>
+					<p class="text-xs font-medium text-indigo-500">{subtitle}</p>
+				</div>
+				<div class="flex items-center gap-2">
+					<span class="text-[11px] font-medium text-gray-400">{time}</span>
+					<button
+						class="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800"
+						onclick={(e) => {
+							e.stopPropagation();
+							visible = false;
+						}}
+						aria-label="Delete notification"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
+				</div>
 			</div>
+			
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 			<p
-				class="text-sm text-gray-500 {moreText ? '' : 'line-clamp-3'}"
-				on:click={(e) => (moreText = !moreText)}
+				class="mt-1 text-sm leading-relaxed text-gray-500 dark:text-gray-400 {moreText ? '' : 'line-clamp-2'}"
+				onclick={(e) => {
+					e.stopPropagation();
+					moreText = !moreText;
+				}}
 			>
-				Lorem ipsum dolor sit amet consectetur adipisicing elit. Quasi recusandae quos eum id,
-				itaque eius mollitia officia dicta, rerum obcaecati placeat, fugiat doloremque. Ut harum
-				blanditiis vero distinctio architecto sapiente.
+				{description}
 			</p>
 		</div>
 	</div>
 {/if}
+

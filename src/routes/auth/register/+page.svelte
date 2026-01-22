@@ -25,7 +25,7 @@
 						<input
 							placeholder="test@gmail.com"
 							type="text"
-							class="w-full rounded-sm border border-gray-300 px-2 py-1 hover:bg-gray-100 focus:border-none focus:ring-2 focus:ring-indigo-600 focus:outline-none"
+							class="w-full rounded-md border border-gray-400 bg-gray-100 px-4 py-2 outline-none transition-all focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
 							id="email"
 						/>
 					</div>

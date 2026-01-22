@@ -16,7 +16,7 @@
 					<input
 						type="text"
 						id="name"
-						class="mt-2 w-full rounded-md border border-gray-400 px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-600 focus:outline-hidden dark:text-white dark:placeholder:text-zinc-300"
+						class="mt-2 w-full rounded-md border border-gray-400 bg-gray-100 px-4 py-2 text-sm text-gray-700 outline-none transition-all focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
 						placeholder="your name"
 					/>
 				</label>
@@ -25,7 +25,7 @@
 					<input
 						type="email"
 						id="email"
-						class="mt-2 w-full rounded-md border border-gray-400 px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-600 focus:outline-hidden dark:text-white dark:placeholder:text-zinc-300"
+						class="mt-2 w-full rounded-md border border-gray-400 bg-gray-100 px-4 py-2 text-sm text-gray-700 outline-none transition-all focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
 						placeholder="email address"
 					/>
 				</label>
@@ -34,7 +34,7 @@
 				<textarea
 					name="message"
 					id="message"
-					class="w-full rounded-md border border-gray-400 p-4 text-gray-700 focus:ring-2 focus:ring-indigo-600 focus:outline-hidden dark:text-white dark:placeholder:text-zinc-300"
+					class="w-full rounded-md border border-gray-400 bg-gray-100 p-4 text-gray-700 outline-none transition-all focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
 					rows="4"
 					placeholder="message"
 				></textarea>

@@ -1,7 +1,6 @@
 <script lang="ts">
-
 </script>
 
-<header class="h-16 flex items-center justify-between sticky top-0 z-10 bg-white px-4">
+<header class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-gray-100 bg-white/80 px-6 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/80">
     <slot/>
 </header>

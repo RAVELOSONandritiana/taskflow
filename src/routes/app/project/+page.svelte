@@ -8,113 +8,112 @@
 	import ProjectCard from '$lib/components/user/app/ProjectCard.svelte';
 	import { goto } from '$app/navigation';
 	import { theme } from '$lib/store/theme.store';
-	export let data;
+	let { data } = $props();
 
-	if ($projects.length === 0) {
-		projects.set(data.projects);
-	}
-	let search: string = $page.url.searchParams.get('q') ?? '';
+	$effect(() => {
+		if ($projects.length === 0 && data.projects) {
+			projects.set(data.projects);
+		}
+	});
+
+	let search = $state($page.url.searchParams.get('q') ?? '');
 	function addProject(a: ProjectI) {
 		projects.update((v) => [...v, { ...a }]);
 	}
 
-	$: filteredProjects = $projects.filter((e) =>
+	let filteredProjects = $derived($projects.filter((e) =>
 		`${e.title} ${e.description}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())
-	);
-	$: if (search != ($page.url.searchParams.get('q') ?? '')) {
-		goto(`?q=${encodeURIComponent(search)}`, {
-			replaceState: true,
-			keepFocus: true,
-			noScroll: true
-		});
-	}
+	));
+	
+	$effect(() => {
+		const currentQ = $page.url.searchParams.get('q') ?? '';
+		if (search !== currentQ) {
+			goto(`?q=${encodeURIComponent(search)}`, {
+				replaceState: true,
+				keepFocus: true,
+				noScroll: true
+			});
+		}
+	});
 
-	let open = false;
+	let open = $state(false);
 </script>
 
-<div class="p-4" class:dark={$theme}>
-	<div class="flex items-center justify-between">
-		<Title>Manage your project here!</Title>
-		<input
-			type="search"
-			bind:value={search}
-			placeholder="search project"
-			class="rounded-md border border-gray-400 bg-gray-100 px-4 py-1 outline-none focus:w-100 focus:border-none focus:ring-2 focus:ring-indigo-500
-	"
-		/>
-	</div>
+<div class="min-h-full bg-gray-50/50 p-6 dark:bg-transparent" class:dark={$theme}>
+	<header class="sticky top-0 z-20 -mx-6 -mt-6 mb-8 flex h-16 items-center justify-between border-b border-gray-100 bg-white/80 px-6 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/80">
+		<Title>Projects list</Title>
+		<div class="flex items-center space-x-4">
+			<input
+				type="search"
+				bind:value={search}
+				placeholder="search project"
+				class="rounded-md border border-gray-400 bg-gray-100 px-4 py-1 outline-none transition-all focus:w-80 focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+			/>
+		</div>
+	</header>
+
 	{#if $projects.length === 0}
-		<p class="text-gray-700">
-			You can create your first project using floating button on the bottom right side
-		</p>
+		<div class="flex flex-col items-center justify-center py-20 text-center">
+			<div class="mb-4 rounded-full bg-indigo-50 p-4 text-indigo-500 dark:bg-indigo-900/20">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15" />
+				</svg>
+			</div>
+			<p class="text-lg font-medium text-gray-900 dark:text-gray-100">No projects found</p>
+			<p class="text-gray-500">Create your first project to get started.</p>
+		</div>
 	{/if}
-	<section class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+	<section class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 		{#each filteredProjects as p (p.id)}
 			<ProjectCard title={p.title} description={p.description} src={p.src} id={p.id} />
 		{/each}
-		<Dialog {open} onClose={() => (open = false)}>
-			<!-- svelte-ignore a11y_click_events_have_key_events -->
-			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-			<form
-				class="shadown-md flex w-1/3 flex-col space-y-4 rounded-md border border-gray-300 bg-white px-5 py-6 text-left"
-				on:click|stopPropagation
-				on:submit={(e) => {
-					const data = new FormData(e.currentTarget);
-					let object = Object.fromEntries(data.entries());
-					const v = {
-						id: v4(),
-						src: undefined,
-						title: object['title'] as string,
-						description: object['description'] as string | undefined
-					};
-					addProject(v);
-					open = false;
-				}}
-			>
-				<h4 class="text-lg font-bold">Add new project</h4>
-				<label for="title" class="space-y-2">
-					<p class="font-medium text-gray-700">
-						Project name<strong class="text-red-500">*</strong>
-					</p>
+	</section>
+
+	<Dialog bind:open onClose={() => (open = false)}>
+		<form
+			class="shadown-md flex w-full max-w-lg flex-col space-y-4 rounded-xl border border-gray-100 bg-white px-8 py-10 text-left dark:border-gray-800 dark:bg-gray-900"
+			onsubmit={(e) => {
+				e.preventDefault();
+				const form = e.currentTarget;
+				const formData = new FormData(form);
+				const title = formData.get('title') as string;
+				const description = formData.get('description') as string;
+				addProject({ id: v4(), title, description, src: undefined });
+				open = false;
+				form.reset();
+			}}
+		>
+			<h2 class="text-2xl font-bold text-gray-900 dark:text-white">Create New Project</h2>
+			<div class="space-y-4">
+				<label for="title" class="block space-y-2">
+					<span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Title</span>
 					<input
 						type="text"
 						id="title"
 						name="title"
-						placeholder="make a simple title"
+						placeholder="Enter project title"
 						required={true}
-						class="w-full rounded-sm border border-gray-300 bg-gray-100 px-4 py-1 focus:border-none focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+						class="w-full rounded-md border border-gray-400 bg-gray-100 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
 					/>
 				</label>
-				<label for="description" class="space-y-2">
-					<p class="font-medium text-gray-700">Description</p>
+				<label for="description" class="block space-y-2">
+					<span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Description</span>
 					<textarea
-						placeholder="you can add a small description of your project if you want"
+						placeholder="Optional description"
 						name="description"
 						id="description"
 						rows="4"
-						class="w-full rounded-sm border border-gray-300 bg-gray-100 px-4 py-1 focus:border-none focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+						class="w-full rounded-md border border-gray-400 bg-gray-100 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
 					></textarea>
 				</label>
-				<button
-					type="submit"
-					class="cursor-pointer rounded-md bg-indigo-500 px-4 py-2 text-white shadow-sm hover:bg-indigo-400"
-					>Add</button
-				>
-			</form>
-		</Dialog>
-		<FloatingButton on:press={() => (open = true)}>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				fill="none"
-				class="h-5 w-5 text-gray-700"
-				viewBox="0 0 24 24"
-				stroke-width="1.5"
-				stroke="currentColor"
-				aria-hidden="true"
-				data-slot="icon"
-			>
-				<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
-			</svg>
-		</FloatingButton>
-	</section>
+			</div>
+			<div class="flex justify-end gap-3 pt-4">
+				<button type="button" onclick={() => (open = false)} class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
+				<button type="submit" class="rounded-lg bg-indigo-500 px-6 py-2 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-600 hover:shadow-indigo-300 dark:shadow-none">Create Project</button>
+			</div>
+		</form>
+	</Dialog>
+
+	<FloatingButton onclick={() => (open = true)} />
 </div>

@@ -5,8 +5,8 @@
 	import ProjectDiagram from '$lib/components/user/app/ProjectDiagram.svelte';
 	import Title from '$lib/components/user/app/Title.svelte';
 	
-	const id_project = $page.params.id_project;
-	let project = $derived($projects.find(p => p.id === id_project) || { title: 'Project Not Found', description: '' });
+	const projectId = $page.params.projectId;
+	let project = $derived($projects.find(p => p.id === projectId) || { title: 'Project Not Found', description: '' });
 	
 	let activeTab = $state('tasks'); // 'overview', 'tasks', 'diagram'
 </script>
