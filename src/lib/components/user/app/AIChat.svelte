@@ -11,6 +11,20 @@
 		time: string;
 	}
 
+	interface Provider {
+		id: 'local' | 'openai' | 'groq';
+		name: string;
+		url: string;
+		requiresKey: boolean;
+		defaultModel: string;
+	}
+
+	const providers: Provider[] = [
+		{ id: 'local', name: 'Local (LM Studio)', url: 'http://localhost:1234/v1/chat/completions', requiresKey: false, defaultModel: 'local-model' },
+		{ id: 'openai', name: 'OpenAI (GPT-4)', url: 'https://api.openai.com/v1/chat/completions', requiresKey: true, defaultModel: 'gpt-4o' },
+		{ id: 'groq', name: 'Groq (Llama 3)', url: 'https://api.groq.com/openai/v1/chat/completions', requiresKey: true, defaultModel: 'llama3-8b-8192' }
+	];
+
 	let messages = $state<Message[]>([
 		{
 			id: '1',
@@ -23,12 +37,31 @@
 	let newMessage = $state('');
 	let isTyping = $state(false);
 	let showHelp = $state(false);
-	let apiUrl = $state('http://localhost:1234/v1/chat/completions');
-	let modelName = $state('local-model');
+	let showSettings = $state(false);
+	
+	let selectedProviderId = $state<'local' | 'openai' | 'groq'>('local');
+	let selectedProvider = $derived(providers.find(p => p.id === selectedProviderId)!);
+	
+	let apiKeys = $state({
+		openai: '',
+		groq: ''
+	});
 
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
 		if (!newMessage.trim() || isTyping) return;
+
+		// Check if key is required and provided
+		if (selectedProvider.requiresKey && !apiKeys[selectedProviderId as keyof typeof apiKeys]) {
+			messages.push({
+				id: 'error-' + Date.now(),
+				role: 'assistant',
+				content: `Please provide an API key for ${selectedProvider.name} in the settings.`,
+				time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+			});
+			showSettings = true;
+			return;
+		}
 
 		const userMsg: Message = {
 			id: Math.random().toString(36).substring(7),
@@ -43,19 +76,28 @@
 		isTyping = true;
 
 		try {
-			const response = await fetch(apiUrl, {
+			const headers: Record<string, string> = {
+				'Content-Type': 'application/json'
+			};
+
+			if (selectedProvider.requiresKey) {
+				headers['Authorization'] = `Bearer ${apiKeys[selectedProviderId as keyof typeof apiKeys]}`;
+			}
+
+			const response = await fetch(selectedProvider.url, {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
+				headers,
 				body: JSON.stringify({
-					model: modelName,
+					model: selectedProvider.defaultModel,
 					messages: messages.map(m => ({ role: m.role, content: m.content })),
 					temperature: 0.7
 				})
 			});
 
-			if (!response.ok) throw new Error('Failed to connect to local LLM');
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
+				throw new Error(errorData.error?.message || `Failed to connect to ${selectedProvider.name}`);
+			}
 
 			const data = await response.json();
 			const aiContent = data.choices[0].message.content;
@@ -66,12 +108,12 @@
 				content: aiContent,
 				time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 			});
-		} catch (error) {
+		} catch (error: any) {
 			console.error('LLM Error:', error);
 			messages.push({
 				id: 'error-' + Date.now(),
 				role: 'assistant',
-				content: 'Error: Could not connect to LM Studio. Please make sure the Local Server is running at ' + apiUrl,
+				content: `Error: ${error.message}. ${selectedProvider.id === 'local' ? 'Please make sure LM Studio is running at ' + selectedProvider.url : 'Please check your API key and connection.'}`,
 				time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 			});
 		} finally {
@@ -89,21 +131,53 @@
 					<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
 				</svg>
 			</div>
+			
 			<div class="flex flex-col">
-				<h2 class="text-sm font-bold text-gray-900 dark:text-white">Local AI Assistant</h2>
-				<span class="text-[10px] font-bold uppercase tracking-widest text-green-500">LM Studio Connected</span>
+				<h2 class="text-sm font-bold text-gray-900 dark:text-white">AI Assistant</h2>
+				<div class="flex items-center gap-1.5">
+					<div class="h-1.5 w-1.5 rounded-full {selectedProviderId === 'local' ? 'bg-green-500' : 'bg-blue-500'}"></div>
+					<span class="text-[10px] font-bold uppercase tracking-widest text-gray-500">{selectedProvider.name}</span>
+				</div>
 			</div>
 		</div>
 
-		<div class="flex items-center gap-3">
+		<!-- Provider Selector -->
+		<div class="flex items-center gap-2">
+			<div class="flex items-center gap-1 rounded-2xl bg-gray-100 p-1 dark:bg-gray-900">
+				{#each providers as provider}
+					<button 
+						onclick={() => selectedProviderId = provider.id}
+						class="rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all
+						{selectedProviderId === provider.id 
+							? 'bg-white text-indigo-600 shadow-sm dark:bg-gray-800 dark:text-indigo-400' 
+							: 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}"
+					>
+						{provider.id}
+					</button>
+				{/each}
+			</div>
+
+			<div class="h-6 w-[1px] bg-gray-200 dark:bg-gray-800 mx-1"></div>
+
+			<button 
+				onclick={() => showSettings = true}
+				class="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+				title="Settings"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+					<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+				</svg>
+			</button>
+			
 			<button 
 				onclick={() => showHelp = true}
-				class="flex items-center gap-2 rounded-xl bg-gray-50 px-4 py-2 text-sm font-bold text-gray-600 transition-all hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
+				class="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+				title="Help"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
 				</svg>
-				How to use
 			</button>
 		</div>
 	</header>
@@ -196,6 +270,59 @@
 		>
 			Got it, thanks!
 		</button>
+	</div>
+</Dialog>
+
+<!-- Settings Modal -->
+<Dialog bind:open={showSettings} onClose={() => showSettings = false}>
+	<div 
+		onclick={(e) => e.stopPropagation()}
+		class="flex w-full max-w-md flex-col space-y-6 rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
+	>
+		<div class="space-y-2">
+			<h2 class="text-2xl font-black text-gray-900 dark:text-white">AI Provider Settings</h2>
+			<p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Configure your cloud API keys</p>
+		</div>
+
+		<div class="space-y-6">
+			<!-- OpenAI -->
+			<div class="space-y-3">
+				<div class="flex items-center justify-between">
+					<label class="text-[11px] font-black uppercase tracking-widest text-gray-400">OpenAI API Key</label>
+					<span class="rounded-lg bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/20">Optional</span>
+				</div>
+				<input 
+					type="password" 
+					bind:value={apiKeys.openai}
+					placeholder="sk-..."
+					class="w-full rounded-xl border-none bg-gray-50 px-4 py-3 text-sm ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-900 dark:ring-gray-800"
+				/>
+			</div>
+
+			<!-- Groq -->
+			<div class="space-y-3">
+				<div class="flex items-center justify-between">
+					<label class="text-[11px] font-black uppercase tracking-widest text-gray-400">Groq API Key</label>
+					<span class="rounded-lg bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/20">Optional</span>
+				</div>
+				<input 
+					type="password" 
+					bind:value={apiKeys.groq}
+					placeholder="gsk-..."
+					class="w-full rounded-xl border-none bg-gray-50 px-4 py-3 text-sm ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-900 dark:ring-gray-800"
+				/>
+			</div>
+		</div>
+
+		<div class="flex flex-col gap-3 pt-2">
+			<button 
+				onclick={() => showSettings = false}
+				class="w-full rounded-2xl bg-indigo-600 py-3 text-sm font-black text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 active:scale-95 dark:shadow-none"
+			>
+				Save Changes
+			</button>
+			<p class="text-center text-[10px] font-medium text-gray-400 italic">Keys are stored temporarily in memory for this session.</p>
+		</div>
 	</div>
 </Dialog>
 
