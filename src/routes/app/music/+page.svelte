@@ -17,7 +17,7 @@
 
 	let files = $state<any[]>([]);
 	$effect(() => {
-		if (files.length === 0 && data.files) {
+		if (files.length === 0 && data.files && data.files.length > 0) {
 			files = data.files.map((f: any) => ({
 				...f,
 				title: cleanTitle(f.title),
@@ -103,7 +103,7 @@
 
 			<div class="flex gap-2">
 				<button
-					on:click={() => (grid = false)}
+					onclick={() => (grid = false)}
 					aria-label="List view"
 					class="rounded-lg p-2 transition-all {!grid
 						? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30'
@@ -124,7 +124,7 @@
 					>
 				</button>
 				<button
-					on:click={() => (grid = true)}
+					onclick={() => (grid = true)}
 					aria-label="Grid view"
 					class="rounded-lg p-2 transition-all {grid
 						? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30'
@@ -172,7 +172,7 @@
 		</div>
 
 		<button
-			on:click={() => (open = true)}
+			onclick={() => (open = true)}
 			class="flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-600 dark:shadow-none"
 		>
 			<svg
@@ -205,7 +205,7 @@
 			<div class="grid grid-cols-4 gap-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
 				{#each filteredFiles as file (file._key)}
 					<!-- svelte-ignore event_directive_deprecated -->
-					<button on:click={() => playTrack(file)} class="flex flex-col items-center">
+					<button onclick={() => playTrack(file)} class="flex flex-col items-center">
 						<Music title={file.title} url={file.url} {grid} />
 					</button>
 				{/each}
@@ -238,7 +238,7 @@
 					<tbody class="divide-y divide-gray-50 dark:divide-gray-800">
 						{#each filteredFiles as file, i (file._key)}
 							<tr
-								on:click={() => playTrack(file)}
+								onclick={() => playTrack(file)}
 								class="group cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-900/50"
 							>
 								<td class="px-6 py-4 text-sm font-medium text-gray-400">{i + 1}</td>
@@ -274,8 +274,9 @@
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<form
-			on:click|stopPropagation={() => {}}
-			on:submit={(e) => {
+			onclick={(e) => e.stopPropagation()}
+			onsubmit={(e) => {
+				e.preventDefault();
 				const formData = new FormData(e.currentTarget);
 				if (file) {
 					formData.append('file', file);
@@ -324,13 +325,13 @@
 						<track kind="captions" />
 					</video>
 				{/if}
-				<input type="file" accept=".mp3,.mp4" class="hidden" on:change={onChange} />
+				<input type="file" accept=".mp3,.mp4" class="hidden" onchange={onChange} />
 			</label>
 
 			<div class="flex justify-end gap-3">
 				<button
 					type="button"
-					on:click={() => (open = false)}
+					onclick={() => (open = false)}
 					class="rounded-xl px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
 					>Cancel</button
 				>

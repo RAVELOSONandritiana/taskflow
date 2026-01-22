@@ -16,7 +16,7 @@
 	class="group relative w-full rounded-sm p-4 transition-all {url == $currentTrack?.url
 		? 'bg-gray-300 dark:bg-gray-600'
 		: ''}"
-	on:click={() => {
+	onclick={() => {
 		currentTrack.set({
 			url: url,
 			isPlay: true

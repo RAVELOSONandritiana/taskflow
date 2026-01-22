@@ -11,7 +11,7 @@
 	let { data } = $props();
 
 	$effect(() => {
-		if ($projects.length === 0 && data.projects) {
+		if ($projects.length === 0 && data.projects && data.projects.length > 0) {
 			projects.set(data.projects);
 		}
 	});
@@ -87,7 +87,7 @@
 </div>
 
 <FloatingButton
-	on:press={() => {
+	onpress={() => {
 		open = true;
 	}}
 >
