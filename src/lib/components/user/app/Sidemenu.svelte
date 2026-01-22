@@ -141,7 +141,9 @@
 
 		<!-- Main Content Area -->
 		<main class="flex-1 overflow-auto">
-			{@render children()}
+			{#key $page.url.pathname}
+				{@render children()}
+			{/key}
 		</main>
 	</div>
 

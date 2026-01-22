@@ -51,7 +51,7 @@
 
 <div class="app" class:dark={$theme}>
 	<Sidemenu>
-		<main>{@render children()}</main>
+		{@render children()}
 	</Sidemenu>
 </div>
 
