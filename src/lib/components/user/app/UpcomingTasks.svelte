@@ -1,4 +1,6 @@
 <script lang="ts">
+	let { limit = 4, compact = false }: { limit?: number, compact?: boolean } = $props();
+
 	const tasks = [
 		{ id: 1, title: 'Finalize UI Design', project: 'TaskFlow', due: 'Tomorrow', priority: 'High', color: 'bg-red-500' },
 		{ id: 2, title: 'Database Migration', project: 'Backend API', due: 'Friday', priority: 'Medium', color: 'bg-orange-500' },
@@ -7,15 +9,15 @@
 	];
 </script>
 
-<div class="rounded-xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800">
+<div class="rounded-[2rem] border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-800 {compact ? 'p-6' : 'p-8'}">
 	<div class="mb-6 flex items-center justify-between">
 		<h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Upcoming Tasks</h2>
 		<button class="text-sm font-semibold text-indigo-500 hover:text-indigo-600">View all</button>
 	</div>
 
 	<div class="space-y-4">
-		{#each tasks as task}
-			<div class="group flex items-center justify-between rounded-lg border border-transparent p-3 transition-all hover:border-gray-100 hover:bg-gray-50 dark:hover:border-gray-700 dark:hover:bg-gray-800/50">
+		{#each tasks.slice(0, limit) as task}
+			<div class="group flex items-center justify-between rounded-lg border border-transparent transition-all hover:border-gray-100 hover:bg-gray-50 dark:hover:border-gray-700 dark:hover:bg-gray-800/50 {compact ? 'p-2' : 'p-3'}">
 				<div class="flex items-center gap-4">
 					<div class="h-10 w-1 flex-shrink-0 rounded-full {task.color}"></div>
 					<div>

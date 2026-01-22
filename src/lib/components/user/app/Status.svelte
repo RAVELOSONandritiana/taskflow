@@ -1,5 +1,7 @@
-<script>
+<script lang="ts">
 	import StatusElement from './StatusElement.svelte';
+
+	let { compact = false }: { compact?: boolean } = $props();
 
 	const stats = [
 		{ title: 'In Progress', value: 12, color: 'text-blue-500', icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />' },
@@ -11,6 +13,6 @@
 
 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 	{#each stats as stat}
-		<StatusElement {...stat} />
+		<StatusElement {...stat} {compact} />
 	{/each}
 </div>

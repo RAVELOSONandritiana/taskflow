@@ -1,5 +1,13 @@
 <script lang="ts">
 	import RecentElement from './RecentElement.svelte';
+	let { limit = 3 }: { limit?: number } = $props();
+
+	const projects = [
+		{ title: "Marketing Website", value: 75, color: "bg-indigo-500" },
+		{ title: "Product Launch", value: 45, color: "bg-green-500" },
+		{ title: "Social Media", value: 60, color: "bg-orange-500" },
+		{ title: "Mobile App", value: 90, color: "bg-blue-500" }
+	];
 </script>
 
 <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800">
@@ -12,8 +20,8 @@
 		</div>
 	</div>
 	<div class="space-y-6">
-		<RecentElement title="Marketing Website" value={75}/>
-        <RecentElement title="Product Launch" value={45} color="bg-green-500"/>
-        <RecentElement title="Social Media Campaign" value={60} color='bg-orange-500'/>
+		{#each projects.slice(0, limit) as project}
+			<RecentElement title={project.title} value={project.value} color={project.color} />
+		{/each}
 	</div>
 </div>
