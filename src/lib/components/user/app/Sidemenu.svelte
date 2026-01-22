@@ -59,9 +59,6 @@
 		</a>
 
 		<div class="flex items-center gap-2">
-			<!-- Notifications Popup -->
-			<NotificationPopup bind:open={notifOpen} />
-
 			<!-- Quick Actions Header Icons -->
 			<Tooltip text="Notifications">
 				<Badge value={2} onclick={() => (notifOpen = !notifOpen)}>
@@ -147,5 +144,8 @@
 			{@render children()}
 		</main>
 	</div>
+
+	<!-- Notifications Drawer -->
+	<NotificationPopup bind:open={notifOpen} />
 </section>
 
