@@ -63,6 +63,7 @@
 {#if $currentTrack?.url != null}
 	<!-- Hidden but active media element for Audio/Video -->
 	{#if isVideo}
+		<!-- svelte-ignore a11y_media_has_caption -->
 		<video
 			src={$currentTrack.url}
 			class="hidden"
