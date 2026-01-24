@@ -20,7 +20,7 @@
 	<title>TaskFlow | Task management</title>
 </svelte:head>
 
-<header class="sticky top-0 z-50 bg-white shadow-md dark:bg-gray-950">
+<header class="sticky top-0 z-50 border-b border-white/10 bg-white/70 backdrop-blur-md dark:bg-gray-950/70">
 	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 		<div class="flex h-16 items-center justify-between">
 			<a href="/" class="flex items-center justify-center">
@@ -79,7 +79,7 @@
 		</div>
 	</div>
 	{#if isOpen}
-		<div class="flex list-none flex-col px-5 space-y-2 md:hidden bg-white dark:bg-gray-950 shadow-lg">
+		<div class="flex list-none flex-col px-5 py-4 space-y-2 md:hidden bg-white/90 dark:bg-gray-950/90 backdrop-blur-lg border-b border-white/10 shadow-xl">
 			{#each links as link}
 				<a
 					href={link.path}

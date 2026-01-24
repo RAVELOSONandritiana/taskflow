@@ -1,15 +1,23 @@
 <script lang="ts">
-	export let title = '';
-	export let icon: string;
+	let { title = '', icon, children } = $props();
 </script>
 
 <div
-	class="transform-transition rounded-lg border border-gray-200 bg-white p-4 duration-500 hover:-translate-y-2 hover:shadow-lg hover:bg-gray-50 cursor-pointer dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+	class="transform-transition rounded-3xl border border-gray-200 bg-white/50 p-8 duration-500 hover:-translate-y-2 hover:shadow-2xl hover:bg-white cursor-pointer dark:bg-gray-900/50 dark:border-white/10 dark:hover:bg-gray-900 backdrop-blur-sm"
 >
-	{#if icon}
-		<img src={icon} alt="icon" class="mx-auto w-12 h-12 mb-3" />
-	{/if}
-	<h4 class="text-gray-800 dark:text-white font-semibold">
-		{title}
-	</h4>
+	<div class="flex flex-col items-center text-center space-y-4">
+		{#if icon}
+			<div class="text-indigo-600 dark:text-indigo-400">
+				{@render icon()}
+			</div>
+		{/if}
+		<h4 class="text-gray-900 dark:text-white font-bold text-lg">
+			{title}
+		</h4>
+		{#if children}
+			<div class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+				{@render children()}
+			</div>
+		{/if}
+	</div>
 </div>
