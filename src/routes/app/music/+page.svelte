@@ -5,11 +5,17 @@
 	import { id_user } from '$lib/store/id_user.store';
 	import Dialog from '$lib/components/user/app/Dialog.svelte';
 	import Header from '$lib/components/user/music/Header.svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
 	import Title from '$lib/components/user/app/Title.svelte';
 	import { fade, fly, scale } from 'svelte/transition';
+	import { onMount } from 'svelte';
+	import { enhance } from '$app/forms';
 
-	let { data } = $props();
+	let { data, form } = $props();
+
+	onMount(() => {
+		invalidate('app:music');
+	});
 
 	function cleanTitle(title: string) {
 		return title.replace(/^\d+-/, '');
@@ -17,13 +23,11 @@
 
 	let files = $state<any[]>([]);
 	$effect(() => {
-		if (files.length === 0 && data.files && data.files.length > 0) {
-			files = data.files.map((f: any) => ({
-				...f,
-				title: cleanTitle(f.title),
-				_key: v4()
-			}));
-		}
+		files = (data.files ?? []).map((f: any) => ({
+			...f,
+			title: cleanTitle(f.title),
+			_key: f._key || v4()
+		}));
 	});
 
 	let filteredFiles = $derived(
@@ -52,6 +56,7 @@
 	// Player State
 	let currentTrack = $state<any>(null);
 	let isPlaying = $state(false);
+	let isUploading = $state(false);
 
 	function onChange(e: Event) {
 		const input = e.target as HTMLInputElement;
@@ -65,7 +70,6 @@
 			previewUrl = URL.createObjectURL(newFile);
 			previewType = newFile.type.startsWith('audio') ? 'audio' : 'video';
 		}
-		input.value = '';
 	}
 
 	function playTrack(track: any) {
@@ -266,7 +270,7 @@
 			</div>
 		{/if}
 	</main>
-	
+
 	<!-- Upload Dialog -->
 	<Dialog bind:open onClose={() => (open = false)}>
 		<!-- ... (existing form) -->
@@ -274,24 +278,38 @@
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<form
-			onclick={(e) => e.stopPropagation()}
-			onsubmit={(e) => {
-				e.preventDefault();
-				const formData = new FormData(e.currentTarget);
-				if (file) {
-					formData.append('file', file);
-					formData.append('id_user', $id_user);
-				}
-				files.push({
-					title: cleanTitle(file?.name || 'New Track'),
-					url: previewUrl || '',
-					_key: v4()
-				});
-				open = false;
-				progress = 0;
+			method="POST"
+			action="?/uploadfile"
+			enctype="multipart/form-data"
+			use:enhance={() => {
+				isUploading = true;
+				return async ({ result, update }) => {
+					isUploading = false;
+					if (result.type === 'success') {
+						if (result.data?.error) {
+							console.error('Server error:', result.data.error);
+							alert(result.data.error);
+						} else {
+							open = false;
+							progress = 0;
+							file = null;
+							if (previewUrl) {
+								URL.revokeObjectURL(previewUrl);
+								previewUrl = null;
+							}
+							invalidate('app:music');
+						}
+					} else if (result.type === 'failure' || result.type === 'error') {
+						console.error('Upload failed:', result);
+						alert('Upload failed. Please try again.');
+					}
+					await update();
+				};
 			}}
+			onclick={(e) => e.stopPropagation()}
 			class="flex w-full max-w-lg flex-col space-y-6 rounded-2xl border border-gray-100 bg-white p-8 dark:border-gray-800 dark:bg-gray-950"
 		>
+			<input type="hidden" name="id_user" value={$id_user} />
 			<h2 class="text-2xl font-bold text-gray-900 dark:text-white">Upload Media</h2>
 			<label
 				class="relative flex h-56 w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 transition-colors hover:border-indigo-400 dark:border-gray-800"
@@ -325,7 +343,7 @@
 						<track kind="captions" />
 					</video>
 				{/if}
-				<input type="file" accept=".mp3,.mp4" class="hidden" onchange={onChange} />
+				<input name="file" type="file" accept=".mp3,.mp4" class="hidden" onchange={onChange} />
 			</label>
 
 			<div class="flex justify-end gap-3">
@@ -337,9 +355,15 @@
 				>
 				<button
 					type="submit"
-					class="rounded-xl bg-indigo-500 px-8 py-2 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-600 dark:shadow-none"
-					>Start Upload</button
+					disabled={isUploading || !file}
+					class="rounded-xl bg-indigo-500 px-8 py-2 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50 dark:shadow-none"
 				>
+					{#if isUploading}
+						Uploading...
+					{:else}
+						Start Upload
+					{/if}
+				</button>
 			</div>
 		</form>
 	</Dialog>

@@ -1,8 +1,9 @@
+import type { RequestHandler } from './$types';
 import path from 'path'
 import { json } from '@sveltejs/kit';
 import fs from 'fs/promises';
 
-export const GET = async ({ params }) => {
+export const GET: RequestHandler = async ({ params }) => {
     const user_id = params.id_user;
 
     const pathdir = path.resolve(`uploads/${user_id}/music`);
@@ -18,7 +19,7 @@ export const GET = async ({ params }) => {
 
         return json(files);
     } catch (e) {
-        console.error(e);
-        return json(e);
+        console.error('API Music Error:', e);
+        return json([]);
     }
 } 
