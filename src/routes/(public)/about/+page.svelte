@@ -5,12 +5,6 @@
 	import ListCard from '$lib/components/user/about/ListCard.svelte';
 	import KeyFeatures from '$lib/components/user/KeyFeatures.svelte';
 	import Logo from '$lib/images/file_0000000027bc722fa9a6c62735b1a346.png';
-	import Simplicity from '$lib/images/simplicity.svg';
-	import Productivity from '$lib/images/productivity.svg';
-	import Accessibility from '$lib/images/accessibility.svg';
-	import Collaboration from '$lib/images/github.svg';
-	import Progress from '$lib/images/simplicity.svg';
-	import Priorities from '$lib/images/productivity.svg';
 </script>
 
 <Banner class="py-12 lg:py-24">
