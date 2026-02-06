@@ -1,38 +1,70 @@
-# sv
+# 🚀 TaskFlow
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+TaskFlow is a premium, all-in-one productivity and collaboration platform designed for modern engineering teams. It combines project management, real-time communication, and performance analytics into a single, unified experience.
 
-## Creating a project
+## ✨ Key Features
 
-If you're seeing this, you've probably already done this step. Congrats!
+### 📂 Project Management (Kanban)
+- Dynamic Kanban boards with drag-and-drop support.
+- Project-specific documentation (Wiki) integrated directly into the workspace.
+- Clear task lifecycle: To Do → In Progress → Done.
 
-```sh
-# create a new project in the current directory
-npx sv create
+### 💬 Messaging Hub (Discussions)
+- Categorized discussion groups (Architecture, Frontend, Design, etc.).
+- Real-time chat with Markdown support for code snippets.
+- Integrated participant management and group invitation system.
 
-# create a new project in my-app
-npx sv create my-app
-```
+### ⏱️ Productivity Suite
+- **Time Tracker**: Integrated Pomodoro timer for deep focus sessions.
+- **Activity Logs**: Manual time entry and historical tracking for billable hours.
+- **Meeting Hub**: Schedule syncs, manage agendas, and track action items.
 
-## Developing
+### 📈 Advanced Analytics
+- Real-time performance tracking using interactive Spline charts.
+- Team velocity metrics and project health monitoring.
+- Data-driven insights to identify bottlenecks.
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+### 📚 Knowledge Base (Wiki)
+- Centralized team documentation hub.
+- Searchable articles with rich text support.
+- Category-based organization for system design, SOPs, and guild notes.
 
-```sh
-npm run dev
+### 🌐 Client Portal
+- Secure external sharing for stakeholders.
+- Board-only access with audit logs and access control.
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+### ✨ AI Assistant
+- Integrated AI coding assistant for documentation, code reviews, and brainstorming.
 
-## Building
+## 🛠️ Tech Stack
+- **Frontend**: SvelteKit 2 + Svelte 5 (Runes)
+- **Styling**: Tailwind CSS 4
+- **Components**: Shadcn-svelte (ui-bits)
+- **State Management**: Svelte Stores + Runes ($state, $derived)
+- **Design**: Glassmorphism, Dark Mode Support, Premium Animations (Framer-like transitions)
 
-To create a production version of your app:
+## 📁 Project Structure
+- `src/routes`: SvelteKit routes (split into `(public)`, `auth`, and `app`).
+- `src/lib/components`: Reusable UI components (header, footer, charts, etc.).
+- `src/lib/store`: Global state management for theme, tracks, and platform data.
+- `src/lib/images`: Static assets and branding.
 
-```sh
-npm run build
-```
+## 🚀 Getting Started
 
-You can preview the production build with `npm run preview`.
+1. **Install Dependencies**:
+   ```sh
+   pnpm install
+   ```
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+2. **Run Development Server**:
+   ```sh
+   pnpm dev
+   ```
+
+3. **Build for Production**:
+   ```sh
+   pnpm build
+   ```
+
+## 📄 License
+This project is proprietary and built for engineering excellence.

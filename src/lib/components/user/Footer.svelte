@@ -8,19 +8,19 @@
 		>
 			<ul class="flex flex-wrap justify-center gap-4 text-xs lg:justify-end">
 				<li>
-					<a href="/" class="text-gray-500 transition hover:opacity-75 dark:text-gray-400">
+					<a href="/terms" class="text-gray-500 transition hover:opacity-75 dark:text-gray-400">
 						Terms &amp; Conditions
 					</a>
 				</li>
 
 				<li>
-					<a href="/" class="text-gray-500 transition hover:opacity-75 dark:text-gray-400">
+					<a href="/privacy" class="text-gray-500 transition hover:opacity-75 dark:text-gray-400">
 						Privacy Policy
 					</a>
 				</li>
 
 				<li>
-					<a href="/" class="text-gray-500 transition hover:opacity-75 dark:text-gray-400">
+					<a href="/privacy" class="text-gray-500 transition hover:opacity-75 dark:text-gray-400">
 						Cookies
 					</a>
 				</li>
