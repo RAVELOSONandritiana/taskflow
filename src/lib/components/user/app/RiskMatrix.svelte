@@ -47,7 +47,7 @@
 	const labels = ['Very Low', 'Low', 'Medium', 'High', 'Critical'];
 </script>
 
-<div class="grid h-full grid-cols-1 gap-8 lg:grid-cols-2">
+<div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
 	<!-- Risk List -->
 	<div
 		class="flex flex-col rounded-[2.5rem] border border-gray-100 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-950"

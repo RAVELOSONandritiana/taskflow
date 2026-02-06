@@ -114,11 +114,9 @@
 	];
 </script>
 
-<div class="flex h-full flex-col bg-gray-50/30 dark:bg-transparent">
-	<!-- Project Header -->
-	<header
-		class="sticky top-0 z-20 border-b border-gray-100 bg-white/80 px-8 pt-8 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/80"
-	>
+<div class="bg-gray-50/30 dark:bg-transparent">
+	<!-- Project Detail Section (Non-sticky) -->
+	<section class="px-8 pt-8">
 		<div class="mb-6 flex items-start justify-between">
 			<div>
 				<nav
@@ -149,13 +147,17 @@
 				</button>
 			</div>
 		</div>
+	</section>
 
-		<!-- Tabs -->
+	<!-- Tabs Navigation (Sticky) -->
+	<header
+		class="sticky top-0 z-20 border-b border-gray-100 bg-white/80 px-8 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/80"
+	>
 		<div class="flex gap-10">
 			{#each ['overview', 'tasks', 'diagram', 'swot', 'gantt', 'risk'] as tab}
 				<button
 					onclick={() => (activeTab = tab)}
-					class="relative pb-4 text-[11px] font-black tracking-[0.2em] uppercase transition-all {activeTab ===
+					class="relative pt-4 pb-4 text-[11px] font-black tracking-[0.2em] uppercase transition-all {activeTab ===
 					tab
 						? 'text-indigo-600 dark:text-indigo-400'
 						: 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}"
@@ -172,25 +174,25 @@
 		</div>
 	</header>
 
-	<main class="custom-scrollbar flex-1 overflow-auto p-8">
+	<main class="p-8">
 		{#if activeTab === 'tasks'}
 			<div in:fade={{ duration: 200 }}>
 				<KanbanBoard />
 			</div>
 		{:else if activeTab === 'diagram'}
-			<div in:fade={{ duration: 200 }} class="h-full">
+			<div in:fade={{ duration: 200 }}>
 				<ProjectDiagram />
 			</div>
 		{:else if activeTab === 'swot'}
-			<div in:fade={{ duration: 200 }} class="h-full">
+			<div in:fade={{ duration: 200 }}>
 				<SwotDiagram />
 			</div>
 		{:else if activeTab === 'gantt'}
-			<div in:fade={{ duration: 200 }} class="h-full">
+			<div in:fade={{ duration: 200 }}>
 				<GanttChart />
 			</div>
 		{:else if activeTab === 'risk'}
-			<div in:fade={{ duration: 200 }} class="h-full">
+			<div in:fade={{ duration: 200 }}>
 				<RiskMatrix />
 			</div>
 		{:else}

@@ -39,7 +39,7 @@
 	let connectingFromId = $state<string | null>(null);
 	let openAddNode = $state(false);
 	let selectedElement = $state<{ type: 'node' | 'connection'; id: string } | null>(null);
-	
+
 	let pointerPos = $state({ x: 0, y: 0 });
 	let hoveredNodeId = $state<string | null>(null);
 
@@ -64,9 +64,9 @@
 
 	function onPointerMove(e: PointerEvent) {
 		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-		pointerPos = { 
-			x: e.clientX - rect.left, 
-			y: e.clientY - rect.top 
+		pointerPos = {
+			x: e.clientX - rect.left,
+			y: e.clientY - rect.top
 		};
 
 		if (draggingNodeId) {
@@ -80,7 +80,7 @@
 		if (connectingFromId) {
 			// Find node under pointer
 			const elements = document.elementsFromPoint(e.clientX, e.clientY);
-			const nodeElement = elements.find(el => el.hasAttribute('data-node-id'));
+			const nodeElement = elements.find((el) => el.hasAttribute('data-node-id'));
 			hoveredNodeId = nodeElement ? nodeElement.getAttribute('data-node-id') : null;
 		}
 	}
@@ -89,8 +89,9 @@
 		if (connectingFromId && hoveredNodeId && connectingFromId !== hoveredNodeId) {
 			// Create connection
 			const exists = connections.find(
-				(c) => (c.fromId === connectingFromId && c.toId === hoveredNodeId) || 
-					   (c.fromId === hoveredNodeId && c.toId === connectingFromId)
+				(c) =>
+					(c.fromId === connectingFromId && c.toId === hoveredNodeId) ||
+					(c.fromId === hoveredNodeId && c.toId === connectingFromId)
 			);
 			if (!exists) {
 				connections.push({ id: v4(), fromId: connectingFromId, toId: hoveredNodeId! });
@@ -131,31 +132,33 @@
 		const startY = from.y + 35;
 		const endX = to.x + 70;
 		const endY = to.y + 35;
-		
+
 		const cp1x = startX + (endX - startX) / 2;
 		const cp2x = startX + (endX - startX) / 2;
-		
+
 		return `M ${startX} ${startY} C ${cp1x} ${startY}, ${cp2x} ${endY}, ${endX} ${endY}`;
 	}
 
-	function getGhostPath(from: Node, pointer: { x: number, y: number }) {
+	function getGhostPath(from: Node, pointer: { x: number; y: number }) {
 		const startX = from.x + 70;
 		const startY = from.y + 35;
 		const endX = pointer.x;
 		const endY = pointer.y;
-		
+
 		const cp1x = startX + (endX - startX) / 2;
 		const cp2x = startX + (endX - startX) / 2;
-		
+
 		return `M ${startX} ${startY} C ${cp1x} ${startY}, ${cp2x} ${endY}, ${endX} ${endY}`;
 	}
 </script>
 
-<div class="relative h-full w-full overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-inner dark:border-gray-800 dark:bg-gray-950">
+<div
+	class="relative min-h-[700px] w-full overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-inner dark:border-gray-800 dark:bg-gray-950"
+>
 	<!-- Workspace Controls -->
-	<div class="absolute left-6 top-6 z-20 space-y-1">
-		<h3 class="text-sm font-black uppercase tracking-widest text-gray-400">Diagram Builder</h3>
-		<p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
+	<div class="absolute top-6 left-6 z-20 space-y-1">
+		<h3 class="text-sm font-black tracking-widest text-gray-400 uppercase">Diagram Builder</h3>
+		<p class="text-[10px] font-bold tracking-widest text-indigo-500 uppercase">
 			{#if connectingFromId}
 				<span class="animate-pulse">Drag to target node to link...</span>
 			{:else}
@@ -165,24 +168,42 @@
 	</div>
 
 	<!-- Floating Toolbar -->
-	<div class="absolute right-6 top-6 z-20 flex flex-col gap-2" onclick={(e) => e.stopPropagation()}>
-		<button 
-			onclick={() => openAddNode = true}
+	<div class="absolute top-6 right-6 z-20 flex flex-col gap-2" onclick={(e) => e.stopPropagation()}>
+		<button
+			onclick={() => (openAddNode = true)}
 			class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 active:scale-95 dark:shadow-none"
 		>
-			<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-6 w-6"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor"
+				stroke-width="2.5"
+			>
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 			</svg>
 		</button>
-		
+
 		{#if selectedElement}
-			<button 
+			<button
 				onclick={deleteSelected}
 				in:fly={{ y: 10, duration: 200 }}
 				class="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-500 shadow-xl transition-all hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-6 w-6"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="2.5"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+					/>
 				</svg>
 			</button>
 		{/if}
@@ -190,49 +211,60 @@
 
 	<!-- Main Canvas -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div 
+	<div
 		class="h-full w-full touch-none"
 		onpointermove={onPointerMove}
 		onpointerup={onPointerUp}
-		onclick={() => selectedElement = null}
+		onclick={() => (selectedElement = null)}
 	>
 		<svg class="h-full w-full">
 			<defs>
 				<pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-					<circle cx="2" cy="2" r="1" fill="currentColor" class="text-gray-200 dark:text-gray-800" />
+					<circle
+						cx="2"
+						cy="2"
+						r="1"
+						fill="currentColor"
+						class="text-gray-200 dark:text-gray-800"
+					/>
 				</pattern>
 			</defs>
 			<rect width="100%" height="100%" fill="url(#grid)" />
 
 			<!-- Connections -->
 			{#each connections as conn (conn.id)}
-				{@const from = nodes.find(n => n.id === conn.fromId)}
-				{@const to = nodes.find(n => n.id === conn.toId)}
+				{@const from = nodes.find((n) => n.id === conn.fromId)}
+				{@const to = nodes.find((n) => n.id === conn.toId)}
 				{#if from && to}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<!-- svelte-ignore a11y_click_events_have_key_events -->
-					<path 
-						d={getPath(from, to)} 
-						fill="none" 
-						stroke="currentColor" 
-						stroke-width={selectedElement?.id === conn.id ? "4" : "2.5"} 
-						onclick={(e) => { e.stopPropagation(); selectedElement = { type: 'connection', id: conn.id }; }}
-						class="cursor-pointer transition-all {selectedElement?.id === conn.id ? 'text-indigo-500' : 'text-indigo-200 hover:text-indigo-400 dark:text-indigo-900/50 dark:hover:text-indigo-700'}"
+					<path
+						d={getPath(from, to)}
+						fill="none"
+						stroke="currentColor"
+						stroke-width={selectedElement?.id === conn.id ? '4' : '2.5'}
+						onclick={(e) => {
+							e.stopPropagation();
+							selectedElement = { type: 'connection', id: conn.id };
+						}}
+						class="cursor-pointer transition-all {selectedElement?.id === conn.id
+							? 'text-indigo-500'
+							: 'text-indigo-200 hover:text-indigo-400 dark:text-indigo-900/50 dark:hover:text-indigo-700'}"
 					/>
 				{/if}
 			{/each}
 
 			<!-- Ghost Connection Line -->
 			{#if connectingFromId}
-				{@const from = nodes.find(n => n.id === connectingFromId)}
+				{@const from = nodes.find((n) => n.id === connectingFromId)}
 				{#if from}
-					<path 
-						d={getGhostPath(from, pointerPos)} 
-						fill="none" 
-						stroke="currentColor" 
-						stroke-width="2.5" 
+					<path
+						d={getGhostPath(from, pointerPos)}
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.5"
 						stroke-dasharray="8,8"
-						class="text-indigo-500 animate-[dash_10s_linear_infinite]"
+						class="animate-[dash_10s_linear_infinite] text-indigo-500"
 					/>
 				{/if}
 			{/if}
@@ -240,30 +272,55 @@
 
 		{#each nodes as node (node.id)}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div 
+			<div
 				onpointerdown={(e) => onPointerDown(e, node.id)}
 				onclick={(e) => e.stopPropagation()}
 				data-node-id={node.id}
-				class="absolute flex flex-col items-center justify-center select-none rounded-2xl border-2 p-5 transition-all
-				{selectedElement?.id === node.id ? 'border-indigo-500 shadow-xl scale-105' : 'border-transparent shadow-sm hover:shadow-md'}
+				class="absolute flex flex-col items-center justify-center rounded-2xl border-2 p-5 transition-all select-none
+				{selectedElement?.id === node.id
+					? 'scale-105 border-indigo-500 shadow-xl'
+					: 'border-transparent shadow-sm hover:shadow-md'}
 				{hoveredNodeId === node.id && connectingFromId !== node.id ? 'ring-4 ring-indigo-500/30' : ''}
-				{node.type === 'start' ? 'bg-green-50/80 dark:bg-green-900/10' : node.type === 'end' ? 'bg-red-50/80 dark:bg-red-900/10' : node.type === 'condition' ? 'bg-orange-50/80 dark:bg-orange-900/10' : 'bg-white/80 dark:bg-gray-800/80'} backdrop-blur-md"
+				{node.type === 'start'
+					? 'bg-green-50/80 dark:bg-green-900/10'
+					: node.type === 'end'
+						? 'bg-red-50/80 dark:bg-red-900/10'
+						: node.type === 'condition'
+							? 'bg-orange-50/80 dark:bg-orange-900/10'
+							: 'bg-white/80 dark:bg-gray-800/80'} backdrop-blur-md"
 				style="left: {node.x}px; top: {node.y}px; width: 140px; height: 70px;"
 			>
 				<div class="flex items-center gap-2">
-					<div class="h-2 w-2 rounded-full {node.type === 'start' ? 'bg-green-500' : node.type === 'end' ? 'bg-red-500' : node.type === 'condition' ? 'bg-orange-500' : 'bg-indigo-500'}"></div>
-					<span class="text-[9px] font-black uppercase tracking-widest text-gray-400">{node.type}</span>
+					<div
+						class="h-2 w-2 rounded-full {node.type === 'start'
+							? 'bg-green-500'
+							: node.type === 'end'
+								? 'bg-red-500'
+								: node.type === 'condition'
+									? 'bg-orange-500'
+									: 'bg-indigo-500'}"
+					></div>
+					<span class="text-[9px] font-black tracking-widest text-gray-400 uppercase"
+						>{node.type}</span
+					>
 				</div>
 				<p class="truncate text-xs font-black text-gray-900 dark:text-gray-100">{node.label}</p>
-				
+
 				<!-- Connection Handle (Only visible on selection) -->
 				{#if selectedElement?.id === node.id}
-					<button 
+					<button
 						onpointerdown={(e) => startConnecting(e, node.id)}
-						class="absolute -right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg ring-4 ring-white transition-transform hover:scale-125 dark:ring-gray-950"
+						class="absolute top-1/2 -right-3 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg ring-4 ring-white transition-transform hover:scale-125 dark:ring-gray-950"
 						title="Drag to connect"
 					>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-3 w-3"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							stroke-width="3"
+						>
 							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 						</svg>
 					</button>
@@ -278,22 +335,31 @@
 </div>
 
 <!-- Add Node Dialog -->
-<Dialog bind:open={openAddNode} onClose={() => openAddNode = false}>
-	<form 
+<Dialog bind:open={openAddNode} onClose={() => (openAddNode = false)}>
+	<form
 		onclick={(e) => e.stopPropagation()}
-		onsubmit={(e) => { e.preventDefault(); addNode(); }}
+		onsubmit={(e) => {
+			e.preventDefault();
+			addNode();
+		}}
 		class="flex w-full max-w-sm flex-col space-y-6 rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
 	>
 		<div class="space-y-2">
-			<h2 class="text-2xl font-black tracking-tight text-gray-900 dark:text-white">New Diagram Element</h2>
-			<p class="text-xs font-medium text-gray-500 italic">Select a type and give your step a label.</p>
+			<h2 class="text-2xl font-black tracking-tight text-gray-900 dark:text-white">
+				New Diagram Element
+			</h2>
+			<p class="text-xs font-medium text-gray-500 italic">
+				Select a type and give your step a label.
+			</p>
 		</div>
 
 		<div class="space-y-4">
 			<label class="block">
-				<span class="mb-2 block text-[11px] font-black uppercase tracking-widest text-gray-400">Step Label</span>
-				<input 
-					type="text" 
+				<span class="mb-2 block text-[11px] font-black tracking-widest text-gray-400 uppercase"
+					>Step Label</span
+				>
+				<input
+					type="text"
 					bind:value={newNodeData.label}
 					placeholder="e.g. Data Processing, API Call..."
 					required
@@ -302,15 +368,17 @@
 			</label>
 
 			<div class="space-y-3">
-				<span class="block text-[11px] font-black uppercase tracking-widest text-gray-400">Element Type</span>
+				<span class="block text-[11px] font-black tracking-widest text-gray-400 uppercase"
+					>Element Type</span
+				>
 				<div class="grid grid-cols-2 gap-3">
 					{#each ['start', 'action', 'condition', 'end'] as type}
 						<button
 							type="button"
-							onclick={() => newNodeData.type = type as any}
-							class="rounded-xl border-2 py-2.5 text-[10px] font-black uppercase tracking-wider transition-all
-							{newNodeData.type === type 
-								? 'border-indigo-500 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20' 
+							onclick={() => (newNodeData.type = type as any)}
+							class="rounded-xl border-2 py-2.5 text-[10px] font-black tracking-wider uppercase transition-all
+							{newNodeData.type === type
+								? 'border-indigo-500 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20'
 								: 'border-transparent bg-gray-50 text-gray-400 hover:bg-gray-100 dark:bg-gray-900'}"
 						>
 							{type}
@@ -321,10 +389,17 @@
 		</div>
 
 		<div class="flex flex-col gap-2.5 pt-2">
-			<button type="submit" class="w-full rounded-2xl bg-indigo-600 py-3.5 text-sm font-black text-white shadow-xl shadow-indigo-100 hover:bg-indigo-700 dark:shadow-none transition-all active:scale-95">
+			<button
+				type="submit"
+				class="w-full rounded-2xl bg-indigo-600 py-3.5 text-sm font-black text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 active:scale-95 dark:shadow-none"
+			>
 				Place on Canvas
 			</button>
-			<button type="button" onclick={() => openAddNode = false} class="w-full rounded-2xl bg-gray-50 py-3 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800">
+			<button
+				type="button"
+				onclick={() => (openAddNode = false)}
+				class="w-full rounded-2xl bg-gray-50 py-3 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
+			>
 				Cancel
 			</button>
 		</div>

@@ -75,7 +75,7 @@
 </script>
 
 <div
-	class="flex h-full flex-col overflow-hidden rounded-[2.5rem] border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950"
+	class="flex flex-col rounded-[2.5rem] border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950"
 >
 	<!-- Header -->
 	<div class="flex items-center justify-between border-b border-gray-50 p-8 dark:border-gray-900">

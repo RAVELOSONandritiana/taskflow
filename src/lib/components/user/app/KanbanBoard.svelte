@@ -27,9 +27,7 @@
 		{
 			id: 'inprogress',
 			title: 'In Progress',
-			tasks: [
-				{ id: v4(), content: 'UI Mockups', priority: 'High' }
-			]
+			tasks: [{ id: v4(), content: 'UI Mockups', priority: 'High' }]
 		},
 		{
 			id: 'review',
@@ -39,9 +37,7 @@
 		{
 			id: 'done',
 			title: 'Done',
-			tasks: [
-				{ id: v4(), content: 'Project Kickoff', priority: 'Low' }
-			]
+			tasks: [{ id: v4(), content: 'Project Kickoff', priority: 'Low' }]
 		}
 	]);
 
@@ -62,10 +58,10 @@
 		if (!newTaskData.content.trim()) return;
 		const col = columns.find((c) => c.id === 'todo');
 		if (col) {
-			col.tasks.push({ 
-				id: v4(), 
-				content: newTaskData.content, 
-				priority: newTaskData.priority 
+			col.tasks.push({
+				id: v4(),
+				content: newTaskData.content,
+				priority: newTaskData.priority
 			});
 		}
 		newTaskData = { content: '', priority: 'Medium' };
@@ -126,7 +122,7 @@
 	}
 </script>
 
-<div class="flex h-full gap-6 overflow-x-auto pb-4 custom-scrollbar">
+<div class="custom-scrollbar flex gap-6 overflow-x-auto pb-4">
 	{#each columns as column (column.id)}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
@@ -136,7 +132,7 @@
 		>
 			<div class="mb-5 flex items-center justify-between px-2">
 				<div class="flex items-center gap-2.5">
-					<h3 class="text-[11px] font-black uppercase tracking-widest text-gray-400">
+					<h3 class="text-[11px] font-black tracking-widest text-gray-400 uppercase">
 						{column.title}
 					</h3>
 					<span
@@ -176,7 +172,7 @@
 					>
 						<div class="mb-4 flex items-center justify-between">
 							<span
-								class="rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-wider 
+								class="rounded-full px-2.5 py-1 text-[9px] font-black tracking-wider uppercase
                                 {task.priority === 'High'
 									? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
 									: task.priority === 'Medium'
@@ -206,7 +202,7 @@
 								</svg>
 							</button>
 						</div>
-						<p class="text-[15px] font-bold leading-relaxed text-gray-800 dark:text-gray-100">
+						<p class="text-[15px] leading-relaxed font-bold text-gray-800 dark:text-gray-100">
 							{task.content}
 						</p>
 					</div>
@@ -228,18 +224,25 @@
 <Dialog bind:open={openAddTask} onClose={() => (openAddTask = false)}>
 	<form
 		onclick={(e) => e.stopPropagation()}
-		onsubmit={(e) => { e.preventDefault(); submitTask(); }}
+		onsubmit={(e) => {
+			e.preventDefault();
+			submitTask();
+		}}
 		class="flex w-full max-w-md flex-col space-y-6 rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
 	>
 		<div class="space-y-2">
 			<h2 class="text-2xl font-black tracking-tight text-gray-900 dark:text-white">New Task</h2>
-			<p class="text-sm font-medium text-gray-500 italic">Define what needs to be done next in your project.</p>
+			<p class="text-sm font-medium text-gray-500 italic">
+				Define what needs to be done next in your project.
+			</p>
 		</div>
 
 		<div class="space-y-4">
 			<label class="block">
-				<span class="mb-2 block text-[11px] font-black uppercase tracking-widest text-gray-400">Description</span>
-				<textarea 
+				<span class="mb-2 block text-[11px] font-black tracking-widest text-gray-400 uppercase"
+					>Description</span
+				>
+				<textarea
 					bind:value={newTaskData.content}
 					placeholder="What needs to be done?"
 					required
@@ -249,17 +252,21 @@
 			</label>
 
 			<div class="space-y-3">
-				<span class="block text-[11px] font-black uppercase tracking-widest text-gray-400">Priority Level</span>
+				<span class="block text-[11px] font-black tracking-widest text-gray-400 uppercase"
+					>Priority Level</span
+				>
 				<div class="grid grid-cols-3 gap-3">
 					{#each ['Low', 'Medium', 'High'] as priority}
 						<button
 							type="button"
-							onclick={() => newTaskData.priority = priority as any}
-							class="rounded-xl border-2 py-2.5 text-[10px] font-black uppercase tracking-wider transition-all
-							{newTaskData.priority === priority 
-								? priority === 'High' ? 'border-red-500 bg-red-50 text-red-600 dark:bg-red-900/20' : 
-								  priority === 'Medium' ? 'border-orange-500 bg-orange-50 text-orange-600 dark:bg-orange-900/20' : 
-								  'border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-900/20'
+							onclick={() => (newTaskData.priority = priority as any)}
+							class="rounded-xl border-2 py-2.5 text-[10px] font-black tracking-wider uppercase transition-all
+							{newTaskData.priority === priority
+								? priority === 'High'
+									? 'border-red-500 bg-red-50 text-red-600 dark:bg-red-900/20'
+									: priority === 'Medium'
+										? 'border-orange-500 bg-orange-50 text-orange-600 dark:bg-orange-900/20'
+										: 'border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-900/20'
 								: 'border-transparent bg-gray-50 text-gray-400 hover:bg-gray-100 dark:bg-gray-900'}"
 						>
 							{priority}
@@ -270,15 +277,18 @@
 		</div>
 
 		<div class="flex flex-col gap-3 pt-2">
-			<button 
+			<button
 				type="submit"
 				class="w-full rounded-2xl bg-indigo-600 py-3.5 text-sm font-black text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 active:scale-95 dark:shadow-none"
 			>
 				Add to List
 			</button>
-			<button 
-				type="button" 
-				onclick={() => { openAddTask = false; newTaskData = { content: '', priority: 'Medium' }; }}
+			<button
+				type="button"
+				onclick={() => {
+					openAddTask = false;
+					newTaskData = { content: '', priority: 'Medium' };
+				}}
 				class="w-full rounded-2xl bg-gray-50 py-3 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
 			>
 				Cancel

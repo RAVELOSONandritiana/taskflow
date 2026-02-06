@@ -70,7 +70,7 @@
 	] as const;
 </script>
 
-<div class="grid h-full grid-cols-1 gap-6 md:grid-cols-2">
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
 	{#each categories as category}
 		<div
 			class="flex flex-col rounded-[2.5rem] border border-gray-100 p-8 shadow-sm transition-all hover:shadow-md dark:border-gray-800 {category.bg}"
