@@ -91,7 +91,7 @@
 				<div class="flex flex-col">
 					<h3 class="text-sm font-bold text-gray-900 dark:text-white">{team.name}</h3>
 					<span class="text-[10px] font-bold tracking-widest text-indigo-500 uppercase"
-						>{team.members} Participants</span
+						>{team.members} Members</span
 					>
 				</div>
 			</div>
@@ -112,15 +112,10 @@
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
-							d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-						/>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+							d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
 						/>
 					</svg>
-					View Members
+					Group Info
 				</button>
 				<button
 					onclick={onAddMember}
@@ -143,9 +138,34 @@
 
 		<!-- Chat Content -->
 		<div class="custom-scrollbar flex-1 overflow-y-auto p-6" bind:this={chatContainer}>
-			{#each team.messages as msg (msg.id)}
-				<MessageItem sender={msg.sender} content={msg.content} time={msg.time} isMe={msg.isMe} />
-			{/each}
+			{#if team.messages.length === 0}
+				<div class="flex h-full flex-col items-center justify-center text-center opacity-50">
+					<div class="mb-4 rounded-full bg-gray-50 p-6 dark:bg-gray-800">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-10 w-10 text-gray-300"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							stroke-width="1.5"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+							/>
+						</svg>
+					</div>
+					<h4 class="text-sm font-bold text-gray-900 dark:text-white">No messages yet</h4>
+					<p class="mt-1 max-w-[200px] text-[10px] leading-relaxed font-medium">
+						Be the first to start the conversation in this room!
+					</p>
+				</div>
+			{:else}
+				{#each team.messages as msg (msg.id)}
+					<MessageItem sender={msg.sender} content={msg.content} time={msg.time} isMe={msg.isMe} />
+				{/each}
+			{/if}
 		</div>
 
 		<!-- Chat Input -->
@@ -170,6 +190,7 @@
 				></textarea>
 				<button
 					type="submit"
+					aria-label="Send message"
 					class="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-indigo-300 active:scale-95 dark:shadow-none"
 				>
 					<svg
@@ -193,6 +214,8 @@
 
 	<!-- Member List Dialog -->
 	<Dialog bind:open={showMembers} onClose={() => (showMembers = false)}>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<div
 			onclick={(e) => e.stopPropagation()}
 			class="flex w-full max-w-sm flex-col space-y-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
@@ -206,6 +229,7 @@
 				</div>
 				<button
 					onclick={() => (showMembers = false)}
+					aria-label="Close members list"
 					class="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
 				>
 					<svg
@@ -255,33 +279,6 @@
 			</button>
 		</div>
 	</Dialog>
-{:else}
-	<div
-		class="flex h-full flex-col items-center justify-center bg-gray-50/20 text-center dark:bg-gray-950/20"
-	>
-		<div
-			class="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-50 text-indigo-500 dark:bg-indigo-900/20"
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-10 w-10"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
-				/>
-			</svg>
-		</div>
-		<h4 class="text-xl font-bold text-gray-900 dark:text-white">Select a Team Room</h4>
-		<p class="mt-2 max-w-xs text-sm font-medium text-gray-500">
-			Pick a discussion group from the sidebar to start collaborating with your team.
-		</p>
-	</div>
 {/if}
 
 <style>
