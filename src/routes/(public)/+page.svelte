@@ -515,18 +515,18 @@
 			{#if ctaVisible}
 				<div class="mx-auto max-w-7xl px-6 lg:px-8" in:fade={{ duration: 1000 }}>
 					<div
-						class="relative isolate overflow-hidden rounded-3xl bg-gray-900 px-6 py-24 shadow-2xl sm:px-24 xl:py-32"
+						class="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-600 px-6 py-24 shadow-2xl sm:px-24 xl:py-32 dark:from-indigo-900 dark:to-purple-900"
 						in:fly={{ y: 50, duration: 1000, easing: backOut }}
 					>
 						<h2
 							class="mx-auto max-w-2xl text-center text-3xl font-bold tracking-tight text-white sm:text-4xl"
 						>
 							Ready to <span
-								class="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent"
+								class="bg-gradient-to-r from-yellow-200 to-pink-200 bg-clip-text text-transparent dark:from-indigo-200 dark:to-purple-200"
 								>take control</span
 							> of your projects?
 						</h2>
-						<p class="mx-auto mt-2 max-w-xl text-center text-lg leading-8 text-gray-300">
+						<p class="mx-auto mt-2 max-w-xl text-center text-lg leading-8 text-white/90">
 							Start using TaskFlow for free and turn your ideas into organized action today.
 						</p>
 						<form class="mx-auto mt-10 flex max-w-md gap-x-4">
@@ -537,12 +537,12 @@
 								type="email"
 								autocomplete="email"
 								required
-								class="min-w-0 flex-auto rounded-xl border-0 bg-white/5 px-3.5 py-2 text-white shadow-sm ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-white focus:ring-inset sm:text-sm sm:leading-6"
+								class="min-w-0 flex-auto rounded-xl border-0 bg-white/20 px-3.5 py-2 text-white shadow-sm ring-1 ring-white/30 backdrop-blur-sm ring-inset placeholder:text-white/60 focus:ring-2 focus:ring-white focus:ring-inset sm:text-sm sm:leading-6"
 								placeholder="Enter your email"
 							/>
 							<ShadButton
 								type="submit"
-								class="flex-none rounded-xl bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+								class="flex-none rounded-xl bg-white px-3.5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
 							>
 								Get Started
 							</ShadButton>
