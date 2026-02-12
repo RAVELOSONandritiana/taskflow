@@ -25,19 +25,46 @@
 	class="sticky top-0 z-50 w-full border-b border-gray-200/50 bg-white/80 backdrop-blur-xl transition-all duration-300 dark:border-white/5 dark:bg-gray-950/80"
 >
 	<div class="mx-auto max-w-7xl px-6 lg:px-8">
-		<div class="flex h-20 items-center justify-between">
+		<div class="flex h-16 items-center justify-between gap-x-8">
 			<!-- Logo Section -->
-			<div class="flex lg:flex-1">
-				<a href="/" class="group -m-1.5 flex items-center gap-3 p-1.5">
+			<div class="flex items-center">
+				<a href="/" class="group -m-1.5 flex items-center gap-2.5 p-1.5">
 					<img
 						src={Logo}
 						alt="Taskflow logo"
-						class="h-8 w-auto transition-transform group-hover:scale-110"
+						class="h-9 w-auto transition-transform group-hover:scale-110"
 					/>
 					<span class="text-xl font-black tracking-tight text-gray-900 dark:text-white"
 						>TaskFlow</span
 					>
 				</a>
+			</div>
+
+			<!-- Desktop Navigation - Centered -->
+			<nav class="hidden lg:flex lg:items-center lg:gap-x-8">
+				{#each links as link}
+					<a
+						href={link.path}
+						class="group relative text-sm leading-6 font-semibold transition-all duration-200 {$page
+							.url.pathname === link.path
+							? 'text-indigo-600 dark:text-indigo-400'
+							: 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'}"
+					>
+						{link.label}
+					</a>
+				{/each}
+			</nav>
+
+			<!-- Desktop Actions -->
+			<div class="hidden lg:flex lg:items-center lg:gap-x-4">
+				<Switch />
+				<div class="h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
+				<a
+					href="/auth/login"
+					class="text-sm leading-6 font-semibold text-gray-900 transition-colors hover:text-indigo-600 dark:text-white dark:hover:text-indigo-400"
+					>Log in</a
+				>
+				<Button class="!px-5 !py-2 text-sm" onclick={() => goto('/auth/register')}>Sign Up</Button>
 			</div>
 
 			<!-- Mobile menu button -->
@@ -74,32 +101,6 @@
 						</svg>
 					{/if}
 				</button>
-			</div>
-
-			<!-- Desktop Navigation -->
-			<nav class="hidden lg:flex lg:gap-x-12">
-				{#each links as link}
-					<a
-						href={link.path}
-						class="group relative text-sm leading-6 font-bold transition-all duration-200 {$page.url
-							.pathname === link.path
-							? 'text-indigo-600 dark:text-indigo-400'
-							: 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'}"
-					>
-						{link.label}
-					</a>
-				{/each}
-			</nav>
-
-			<!-- Desktop Actions -->
-			<div class="hidden lg:flex lg:flex-1 lg:items-center lg:justify-end lg:gap-x-6">
-				<Switch />
-				<a
-					href="/auth/login"
-					class="text-sm leading-6 font-bold text-gray-900 transition-colors hover:text-indigo-600 dark:text-white dark:hover:text-indigo-400"
-					>Log in</a
-				>
-				<Button class="!px-5 !py-2 text-sm" onclick={() => goto('/auth/register')}>Sign Up</Button>
 			</div>
 		</div>
 	</div>
