@@ -87,12 +87,6 @@
 							: 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'}"
 					>
 						{link.label}
-						<span
-							class="absolute -bottom-1 left-0 h-0.5 bg-indigo-600 transition-all duration-300 dark:bg-indigo-400 {$page
-								.url.pathname === link.path
-								? 'w-full'
-								: 'w-0 group-hover:w-full'}"
-						></span>
 					</a>
 				{/each}
 			</nav>
