@@ -83,12 +83,12 @@
 					>
 						Get Started Free
 					</Button>
-					<Button
-						class="border border-gray-200 bg-white/50 px-8 py-3 text-lg text-gray-700 backdrop-blur-sm transition-all hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900/50 dark:text-gray-200 dark:hover:bg-gray-800"
+					<button
+						class="rounded-xl border-2 border-gray-300 bg-white px-8 py-3 text-lg font-semibold text-gray-900 shadow-sm transition-all duration-200 hover:border-gray-400 hover:bg-gray-50 active:scale-95 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200 dark:hover:border-gray-600 dark:hover:bg-gray-800"
 						onclick={() => goto('/features')}
 					>
 						Learn More
-					</Button>
+					</button>
 				</div>
 			</div>
 			<div
