@@ -3,12 +3,16 @@
 	import { theme } from '$lib/store/theme.store';
 	import Notification from '$lib/components/user/app/Notification.svelte';
 
-	let notifications = [
-		{ id: 1, title: 'New Project Assigned', read: false },
-		{ id: 2, title: 'Team Meeting Reminder', read: true },
-		{ id: 3, title: 'Music Playlist Updated', read: false },
-		{ id: 4, title: 'New Team Member Joined', read: true }
-	];
+	let { data } = $props();
+	let notifications = $state(data.notifications);
+
+	$effect(() => {
+		notifications = data.notifications;
+	});
+
+	// Mock handle read for now as the component binds to read
+	// Real implementation would watch for changes and call API
+	// Or Notification component emits event
 </script>
 
 <div class="p-4" class:dark={$theme}>

@@ -2,11 +2,16 @@
 	import { v4 } from 'uuid';
 	import Dialog from './Dialog.svelte';
 	import { fade } from 'svelte/transition';
+	import { onMount } from 'svelte';
+
+	let { project } = $props();
 
 	interface Task {
 		id: string;
 		content: string;
+		description?: string;
 		priority: 'Low' | 'Medium' | 'High';
+		status: string;
 	}
 
 	interface Column {
@@ -19,15 +24,12 @@
 		{
 			id: 'todo',
 			title: 'To Do',
-			tasks: [
-				{ id: v4(), content: 'Initial Research', priority: 'Medium' },
-				{ id: v4(), content: 'Define Requirements', priority: 'High' }
-			]
+			tasks: []
 		},
 		{
 			id: 'inprogress',
 			title: 'In Progress',
-			tasks: [{ id: v4(), content: 'UI Mockups', priority: 'High' }]
+			tasks: []
 		},
 		{
 			id: 'review',
@@ -37,9 +39,54 @@
 		{
 			id: 'done',
 			title: 'Done',
-			tasks: [{ id: v4(), content: 'Project Kickoff', priority: 'Low' }]
+			tasks: []
 		}
 	]);
+
+	let loading = $state(true);
+
+	async function fetchTasks() {
+		if (!project?.id) return;
+		loading = true;
+		try {
+			const res = await fetch(`/api/tasks?projectId=${project.id}`);
+			if (res.ok) {
+				const data = await res.json();
+				// Reset columns
+				columns.forEach((c) => (c.tasks = []));
+
+				// Distribute tasks
+				if (data.data) {
+					data.data.forEach((t: any) => {
+						const task: Task = {
+							id: t.id,
+							content: t.title,
+							description: t.description,
+							priority: t.priority,
+							status: t.status // needed for tracking
+						};
+						const col = columns.find((c) => c.id === t.status);
+						if (col) {
+							col.tasks.push(task);
+						} else {
+							// Default to todo if status unknown
+							columns[0].tasks.push(task);
+						}
+					});
+				}
+			}
+		} catch (error) {
+			console.error(error);
+		} finally {
+			loading = false;
+		}
+	}
+
+	$effect(() => {
+		if (project?.id) {
+			fetchTasks();
+		}
+	});
 
 	let dragTask = $state<{ task: Task; fromColId: string } | null>(null);
 	let taskToDelete = $state<{ task: Task; colId: string } | null>(null);
@@ -47,25 +94,52 @@
 	let openAddTask = $state(false);
 	let newTaskData = $state({
 		content: '',
+		description: '',
 		priority: 'Medium' as 'Low' | 'Medium' | 'High'
 	});
 
-	function addTask(colId: string) {
+	let activeColumnId = $state('todo');
+
+	function openAddModal(colId: string) {
+		activeColumnId = colId;
 		openAddTask = true;
 	}
 
-	function submitTask() {
-		if (!newTaskData.content.trim()) return;
-		const col = columns.find((c) => c.id === 'todo');
-		if (col) {
-			col.tasks.push({
-				id: v4(),
-				content: newTaskData.content,
-				priority: newTaskData.priority
+	async function submitTask() {
+		if (!newTaskData.content.trim() || !project?.id) return;
+
+		try {
+			const res = await fetch('/api/tasks', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					title: newTaskData.content,
+					description: newTaskData.description,
+					priority: newTaskData.priority,
+					colId: activeColumnId, // acting as status
+					projectId: project.id
+				})
 			});
+
+			if (res.ok) {
+				const data = await res.json();
+				const newTask = data.data;
+				const col = columns.find((c) => c.id === activeColumnId);
+				if (col) {
+					col.tasks.push({
+						id: newTask.id,
+						content: newTask.title,
+						description: newTask.description,
+						priority: newTask.priority,
+						status: newTask.status
+					});
+				}
+				newTaskData = { content: '', description: '', priority: 'Medium' };
+				openAddTask = false;
+			}
+		} catch (error) {
+			console.error(error);
 		}
-		newTaskData = { content: '', priority: 'Medium' };
-		openAddTask = false;
 	}
 
 	function handleDragStart(e: DragEvent, task: Task, colId: string) {
@@ -83,14 +157,14 @@
 		}
 	}
 
-	function handleDrop(e: DragEvent, toColId: string) {
+	async function handleDrop(e: DragEvent, toColId: string) {
 		e.preventDefault();
 		if (!dragTask) return;
 
 		const { task, fromColId } = dragTask;
 		if (fromColId === toColId) return;
 
-		// Remove from source
+		// Remove from source (optimistic update)
 		const fromCol = columns.find((c) => c.id === fromColId);
 		if (fromCol) {
 			fromCol.tasks = fromCol.tasks.filter((t) => t.id !== task.id);
@@ -99,7 +173,24 @@
 		// Add to destination
 		const toCol = columns.find((c) => c.id === toColId);
 		if (toCol) {
+			task.status = toColId;
 			toCol.tasks.push(task);
+		}
+
+		// Call API
+		try {
+			await fetch(`/api/tasks/${task.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					status: toColId,
+					colId: toColId
+				})
+			});
+		} catch (error) {
+			console.error('Failed to update task position', error);
+			// Revert changes if needed (complex implementation omitted for brevity)
+			fetchTasks();
 		}
 
 		dragTask = null;
@@ -110,13 +201,25 @@
 		openConfirm = true;
 	}
 
-	function deleteTask() {
+	async function deleteTask() {
 		if (!taskToDelete) return;
 		const { task, colId } = taskToDelete;
-		const col = columns.find((c) => c.id === colId);
-		if (col) {
-			col.tasks = col.tasks.filter((t) => t.id !== task.id);
+
+		try {
+			const res = await fetch(`/api/tasks/${task.id}`, {
+				method: 'DELETE'
+			});
+
+			if (res.ok) {
+				const col = columns.find((c) => c.id === colId);
+				if (col) {
+					col.tasks = col.tasks.filter((t) => t.id !== task.id);
+				}
+			}
+		} catch (error) {
+			console.error(error);
 		}
+
 		openConfirm = false;
 		taskToDelete = null;
 	}
@@ -142,78 +245,85 @@
 					</span>
 				</div>
 
-				{#if column.id === 'todo'}
-					<button
-						onclick={() => addTask(column.id)}
-						aria-label="Add task to {column.title}"
-						class="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm transition-all hover:scale-105 hover:bg-indigo-50 active:scale-95 dark:bg-gray-800 dark:text-indigo-400 dark:hover:bg-gray-700"
+				<button
+					onclick={() => openAddModal(column.id)}
+					aria-label="Add task to {column.title}"
+					class="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm transition-all hover:scale-105 hover:bg-indigo-50 active:scale-95 dark:bg-gray-800 dark:text-indigo-400 dark:hover:bg-gray-700"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						stroke-width="2.5"
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-5 w-5"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							stroke-width="2.5"
-						>
-							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-						</svg>
-					</button>
-				{/if}
+						<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+					</svg>
+				</button>
 			</div>
 
-			<div class="flex-1 space-y-4">
-				{#each column.tasks as task (task.id)}
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div
-						class="group cursor-grab rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:border-indigo-200 hover:shadow-xl active:cursor-grabbing dark:border-gray-800 dark:bg-gray-800/80 dark:hover:border-indigo-900/50"
-						draggable="true"
-						ondragstart={(e) => handleDragStart(e, task, column.id)}
-					>
-						<div class="mb-4 flex items-center justify-between">
-							<span
-								class="rounded-full px-2.5 py-1 text-[9px] font-black tracking-wider uppercase
-                                {task.priority === 'High'
-									? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-									: task.priority === 'Medium'
-										? 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400'
-										: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'}"
-							>
-								{task.priority}
-							</span>
-							<button
-								onclick={() => confirmDelete(task, column.id)}
-								aria-label="Delete task"
-								class="rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="h-4 w-4"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-									stroke-width="2.5"
+			<div class="min-h-[100px] flex-1 space-y-4">
+				{#if loading}
+					<div class="flex h-20 items-center justify-center">
+						<span class="text-xs text-gray-400">Loading...</span>
+					</div>
+				{:else}
+					{#each column.tasks as task (task.id)}
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							class="group cursor-grab rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:border-indigo-200 hover:shadow-xl active:cursor-grabbing dark:border-gray-800 dark:bg-gray-800/80 dark:hover:border-indigo-900/50"
+							draggable="true"
+							ondragstart={(e) => handleDragStart(e, task, column.id)}
+						>
+							<div class="mb-4 flex items-center justify-between">
+								<span
+									class="rounded-full px-2.5 py-1 text-[9px] font-black tracking-wider uppercase
+                                    {task.priority === 'High'
+										? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+										: task.priority === 'Medium'
+											? 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400'
+											: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'}"
 								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-									/>
-								</svg>
-							</button>
+									{task.priority || 'Medium'}
+								</span>
+								<button
+									onclick={() => confirmDelete(task, column.id)}
+									aria-label="Delete task"
+									class="rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										class="h-4 w-4"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+										stroke-width="2.5"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+										/>
+									</svg>
+								</button>
+							</div>
+							<p class="text-[15px] leading-relaxed font-bold text-gray-800 dark:text-gray-100">
+								{task.content}
+							</p>
+							{#if task.description}
+								<p class="mt-2 line-clamp-2 text-xs text-gray-500">{task.description}</p>
+							{/if}
 						</div>
-						<p class="text-[15px] leading-relaxed font-bold text-gray-800 dark:text-gray-100">
-							{task.content}
-						</p>
-					</div>
-				{/each}
+					{/each}
 
-				{#if column.tasks.length === 0}
-					<div
-						class="flex h-32 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-100 opacity-50 dark:border-gray-800"
-					>
-						<p class="text-xs font-bold text-gray-400 italic">Drop tasks here</p>
-					</div>
+					{#if column.tasks.length === 0}
+						<div
+							class="flex h-32 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-100 opacity-50 dark:border-gray-800"
+						>
+							<p class="text-xs font-bold text-gray-400 italic">Drop tasks here</p>
+						</div>
+					{/if}
 				{/if}
 			</div>
 		</div>
@@ -233,21 +343,35 @@
 		<div class="space-y-2">
 			<h2 class="text-2xl font-black tracking-tight text-gray-900 dark:text-white">New Task</h2>
 			<p class="text-sm font-medium text-gray-500 italic">
-				Define what needs to be done next in your project.
+				Add a task to <span class="font-bold text-indigo-500"
+					>{columns.find((c) => c.id === activeColumnId)?.title}</span
+				>
 			</p>
 		</div>
 
 		<div class="space-y-4">
 			<label class="block">
 				<span class="mb-2 block text-[11px] font-black tracking-widest text-gray-400 uppercase"
-					>Description</span
+					>Task Title</span
 				>
 				<textarea
 					bind:value={newTaskData.content}
 					placeholder="What needs to be done?"
 					required
-					rows="3"
+					rows="2"
 					class="w-full rounded-2xl border-none bg-gray-100 px-4 py-3 text-sm font-bold ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-gray-700"
+				></textarea>
+			</label>
+
+			<label class="block">
+				<span class="mb-2 block text-[11px] font-black tracking-widest text-gray-400 uppercase"
+					>Description (Optional)</span
+				>
+				<textarea
+					bind:value={newTaskData.description}
+					placeholder="Add details..."
+					rows="3"
+					class="w-full rounded-2xl border-none bg-gray-100 px-4 py-3 text-sm font-medium ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-gray-700"
 				></textarea>
 			</label>
 
@@ -287,7 +411,7 @@
 				type="button"
 				onclick={() => {
 					openAddTask = false;
-					newTaskData = { content: '', priority: 'Medium' };
+					newTaskData = { content: '', description: '', priority: 'Medium' };
 				}}
 				class="w-full rounded-2xl bg-gray-50 py-3 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
 			>

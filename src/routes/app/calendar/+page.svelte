@@ -1,10 +1,28 @@
 <script lang="ts">
 	import Title from '$lib/components/user/app/Title.svelte';
+	import Dialog from '$lib/components/user/app/Dialog.svelte';
 	import { theme } from '$lib/store/theme.store';
+	import { fade } from 'svelte/transition';
+
+	let { data } = $props();
+	// svelte-ignore state_referenced_locally
+	let dbEvents = $state(data.meetings);
+
+	$effect(() => {
+		dbEvents = data.meetings;
+	});
 
 	let currentDate = new Date();
 	let currentMonth = $state(currentDate.getMonth());
 	let currentYear = $state(currentDate.getFullYear());
+	let showAddModal = $state(false);
+
+	let newEvent = $state({
+		title: '',
+		date: '',
+		time: '',
+		type: 'meeting'
+	});
 
 	const monthNames = [
 		'January',
@@ -23,15 +41,6 @@
 
 	let daysInMonth = $derived(new Date(currentYear, currentMonth + 1, 0).getDate());
 	let firstDayOfMonth = $derived(new Date(currentYear, currentMonth, 1).getDay());
-
-	// Mock events
-	const events = [
-		{ date: 5, title: 'Team Meeting', type: 'meeting', time: '10:00 AM' },
-		{ date: 12, title: 'Project Deadline', type: 'deadline', time: '5:00 PM' },
-		{ date: 15, title: 'Client Call', type: 'call', time: '2:00 PM' },
-		{ date: 24, title: 'Design Review', type: 'review', time: '11:00 AM' },
-		{ date: 28, title: 'Sprint Planning', type: 'planning', time: '09:00 AM' }
-	];
 
 	function prevMonth() {
 		if (currentMonth === 0) {
@@ -52,7 +61,35 @@
 	}
 
 	function getEventsForDay(day: number) {
-		return events.filter((e) => e.date === day);
+		return dbEvents.filter(
+			(e) => e.date === day && e.month === currentMonth && e.year === currentYear
+		);
+	}
+
+	async function addEvent() {
+		if (!newEvent.title || !newEvent.date || !newEvent.time) return;
+
+		const startDateTime = new Date(`${newEvent.date}T${newEvent.time}`);
+		const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000); // Default 1 hour
+
+		try {
+			const res = await fetch('/api/meetings', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					title: newEvent.title,
+					startTime: startDateTime.toISOString(),
+					endTime: endDateTime.toISOString(),
+					description: newEvent.type
+				})
+			});
+
+			if (res.ok) {
+				location.reload();
+			}
+		} catch (e) {
+			console.error(e);
+		}
 	}
 </script>
 
@@ -102,6 +139,7 @@
 			</button>
 
 			<button
+				onclick={() => (showAddModal = true)}
 				class="ml-2 rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-indigo-600 active:scale-95"
 			>
 				+ Add
@@ -152,18 +190,7 @@
 					<div class="no-scrollbar mt-0.5 flex-1 space-y-0.5 overflow-y-auto">
 						{#each dayEvents as event}
 							<div
-								class="truncate rounded px-1 py-0.5 text-[8px] leading-tight font-bold
-								{event.type === 'meeting' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''}
-								{event.type === 'deadline' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : ''}
-								{event.type === 'call'
-									? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-									: ''}
-								{event.type === 'review'
-									? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-									: ''}
-								{event.type === 'planning'
-									? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
-									: ''}"
+								class="truncate rounded bg-blue-100 px-1 py-0.5 text-[8px] leading-tight font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
 								title="{event.time} - {event.title}"
 							>
 								{event.title}
@@ -175,6 +202,71 @@
 		</div>
 	</div>
 </div>
+
+<!-- Add Event Dialog -->
+<Dialog bind:open={showAddModal} onClose={() => (showAddModal = false)}>
+	<form
+		onsubmit={(e) => {
+			e.preventDefault();
+			addEvent();
+		}}
+		class="flex w-full max-w-sm flex-col space-y-6 rounded-2xl border border-gray-100 bg-white p-8 dark:border-gray-800 dark:bg-gray-950"
+	>
+		<div class="space-y-2">
+			<h2 class="text-2xl font-black tracking-tight text-gray-900 dark:text-white">New Event</h2>
+		</div>
+
+		<div class="space-y-4">
+			<label class="block">
+				<span class="mb-2 block text-xs font-bold tracking-wider text-gray-400 uppercase"
+					>Title</span
+				>
+				<input
+					type="text"
+					bind:value={newEvent.title}
+					class="w-full rounded-xl border-none bg-gray-100 px-4 py-3 text-sm ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-gray-700"
+					required
+				/>
+			</label>
+			<label class="block">
+				<span class="mb-2 block text-xs font-bold tracking-wider text-gray-400 uppercase">Date</span
+				>
+				<input
+					type="date"
+					bind:value={newEvent.date}
+					class="w-full rounded-xl border-none bg-gray-100 px-4 py-3 text-sm ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-gray-700"
+					required
+				/>
+			</label>
+			<label class="block">
+				<span class="mb-2 block text-xs font-bold tracking-wider text-gray-400 uppercase">Time</span
+				>
+				<input
+					type="time"
+					bind:value={newEvent.time}
+					class="w-full rounded-xl border-none bg-gray-100 px-4 py-3 text-sm ring-1 ring-gray-200 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-gray-700"
+					required
+				/>
+			</label>
+		</div>
+
+		<div class="flex justify-end gap-3 pt-2">
+			<button
+				type="button"
+				onclick={() => (showAddModal = false)}
+				class="rounded-xl px-4 py-2 text-sm font-bold text-gray-400 hover:text-gray-900 dark:hover:text-white"
+			>
+				Cancel
+			</button>
+			<button
+				type="submit"
+				class="rounded-xl bg-indigo-500 px-6 py-2 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-600 active:scale-95 dark:shadow-none"
+			>
+				Add Event
+			</button>
+		</div>
+	</form>
+</Dialog>
 
 <style>
 	.no-scrollbar::-webkit-scrollbar {

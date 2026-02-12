@@ -177,7 +177,7 @@
 	<main class="p-8">
 		{#if activeTab === 'tasks'}
 			<div in:fade={{ duration: 200 }}>
-				<KanbanBoard />
+				<KanbanBoard {project} />
 			</div>
 		{:else if activeTab === 'diagram'}
 			<div in:fade={{ duration: 200 }}>
@@ -189,7 +189,7 @@
 			</div>
 		{:else if activeTab === 'gantt'}
 			<div in:fade={{ duration: 200 }}>
-				<GanttChart />
+				<GanttChart {project} />
 			</div>
 		{:else if activeTab === 'risk'}
 			<div in:fade={{ duration: 200 }}>

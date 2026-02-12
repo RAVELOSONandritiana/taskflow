@@ -1,14 +1,16 @@
-export const handle = async ({ event, resolve }) => {
-    let user_id = event.cookies.get('user_id');
-    if (!user_id) {
-        user_id = '1';
-        event.cookies.set('user_id', user_id, {
-            sameSite: 'lax',
-            httpOnly: true,
-            path: '/',
-            secure: false
-        });
+import { getUserFromRequest } from '$lib/server/auth';
+import type { Handle } from '@sveltejs/kit';
+
+export const handle: Handle = async ({ event, resolve }) => {
+    // Get user from session cookie
+    const user = await getUserFromRequest(event);
+
+    // Set user in locals
+    if (user) {
+        event.locals.user = user;
+    } else {
+        event.locals.user = null;
     }
-    event.locals.user = { id: user_id }
+
     return resolve(event);
-}
+};

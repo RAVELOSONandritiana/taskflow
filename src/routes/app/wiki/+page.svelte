@@ -9,50 +9,61 @@
 	let isEditing = $state(false);
 	let currentArticle = $state<any>(null);
 
+	interface Article {
+		id: string;
+		title: string;
+		category: string;
+		author: string | null;
+		date: string;
+		content: string;
+		tags: string[];
+	}
+
 	const categories = ['All', 'Product', 'Engineering', 'Design', 'Onboarding', 'Policies'];
 
-	let articles = $state([
-		{
-			id: v4(),
-			title: 'Welcome to TaskFlow',
-			category: 'Onboarding',
-			author: 'Alex',
-			date: '2 Oct 2025',
-			content:
-				'# Welcome!\nThis is the central knowledge base for our team. Feel free to contribute!',
-			tags: ['Getting Started', 'Intro']
-		},
-		{
-			id: v4(),
-			title: 'Design Philosophy',
-			category: 'Design',
-			author: 'Sarah',
-			date: '15 Jan 2026',
-			content: 'We focus on high-stakes project management with a premium feel.',
-			tags: ['UI', 'UX', 'Branding']
-		},
-		{
-			id: v4(),
-			title: 'API Rate Limits',
-			category: 'Engineering',
-			author: 'Marcus',
-			date: '3 Feb 2026',
-			content: 'Internal API limits are set to 5000 requests per hour.',
-			tags: ['Backend', 'DevOps']
+	let { data } = $props();
+	// svelte-ignore state_referenced_locally
+	let articles = $state<Article[]>(data.articles);
+
+	$effect(() => {
+		articles = data.articles;
+	});
+
+	async function saveArticle() {
+		if (!currentArticle.title || !currentArticle.content) return;
+
+		try {
+			// Simplified: only create new for now, update needs PUT endpoint
+			const res = await fetch('/api/wiki', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					title: currentArticle.title,
+					content: currentArticle.content
+				})
+			});
+
+			if (res.ok) {
+				location.reload();
+			}
+		} catch (e) {
+			console.error(e);
 		}
-	]);
+
+		isEditing = false;
+	}
 
 	let filteredArticles = $derived(
 		articles.filter((a) => {
 			const matchesSearch =
-				a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				a.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+				(a.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+				(a.tags || []).some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
 			const matchesCategory = selectedCategory === 'All' || a.category === selectedCategory;
 			return matchesSearch && matchesCategory;
 		})
 	);
 
-	function openArticle(article: any) {
+	function openArticle(article: Article) {
 		currentArticle = { ...article };
 		isEditing = true;
 	}
@@ -68,16 +79,6 @@
 			tags: []
 		};
 		isEditing = true;
-	}
-
-	function saveArticle() {
-		const index = articles.findIndex((a) => a.id === currentArticle.id);
-		if (index !== -1) {
-			articles[index] = currentArticle;
-		} else {
-			articles = [currentArticle, ...articles];
-		}
-		isEditing = false;
 	}
 
 	function cancelEdit() {

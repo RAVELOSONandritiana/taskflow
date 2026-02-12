@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import Dialog from '$lib/components/user/app/Dialog.svelte';
 	import { projects, type ProjectI } from '$lib/store/project.store';
 
@@ -13,12 +13,14 @@
 	let progress = $state(0);
 
 	$effect(() => {
-		const t = title.split(' ');
-		let list: string[] = [];
-		t.forEach((e) => {
-			if (e[0]) list.push(e[0].toUpperCase());
-		});
-		abr = list.slice(0, 2).join('');
+		if (title) {
+			const t = title.split(' ');
+			let list: string[] = [];
+			t.forEach((e) => {
+				if (e[0]) list.push(e[0].toUpperCase());
+			});
+			abr = list.slice(0, 2).join('');
+		}
 	});
 
 	function onChange(e: Event) {
@@ -36,9 +38,42 @@
 		input.value = '';
 	}
 
-	function deleteProject() {
-		projects.update((v) => v.filter((e) => e.id != id));
-		openConfirm = false;
+	async function deleteProject() {
+		try {
+			const res = await fetch(`/api/projects/${id}`, {
+				method: 'DELETE'
+			});
+			if (res.ok) {
+				await invalidateAll();
+				openConfirm = false;
+			} else {
+				console.error('Failed to delete project');
+			}
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	async function updateProject() {
+		try {
+			const res = await fetch(`/api/projects/${id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					name: title,
+					description: description
+				})
+			});
+
+			if (res.ok) {
+				await invalidateAll();
+				open = false;
+			} else {
+				console.error('Failed to update project');
+			}
+		} catch (error) {
+			console.error(error);
+		}
 	}
 </script>
 
@@ -255,49 +290,16 @@
 		>
 			<form
 				role="presentation"
-				enctype="multipart/form-data"
 				onsubmit={async (e) => {
 					e.preventDefault();
-					const data = new FormData(e.currentTarget);
-					data.append('id', `${id}`);
-					data.append('id_user', '1');
-					if (file) data.append('image', file);
-
-					const xhr = new XMLHttpRequest();
-					xhr.open('POST', '?/update');
-					xhr.responseType = 'json';
-					xhr.upload.onprogress = (e) => {
-						if (e.lengthComputable) progress = Math.round((e.loaded / e.total) * 100);
-					};
-					xhr.onload = () => {
-						const json = xhr.response;
-						src = JSON.parse(json.data)[JSON.parse(json.data)[0].filepath] ?? src;
-						const object = Object.fromEntries(data.entries());
-						title = object.title as string;
-						description = object.description as string;
-						projects.update((list) =>
-							list.map((e) => (e.id == id ? { id, title, description, src } : e))
-						);
-						if (progress == 100)
-							setTimeout(() => {
-								open = false;
-								progress = 0;
-								if (previewUrl) {
-									URL.revokeObjectURL(previewUrl);
-									file = null;
-								}
-							}, 500);
-					};
-					xhr.send(data);
+					await updateProject();
 				}}
 			>
 				<div class="mb-6">
 					<h4 class="text-2xl font-black tracking-tight text-gray-900 dark:text-white">
 						Project Settings
 					</h4>
-					<p class="text-sm font-medium text-gray-500">
-						Update your project details and cover image.
-					</p>
+					<p class="text-sm font-medium text-gray-500">Update your project details.</p>
 				</div>
 
 				<div class="space-y-6">
@@ -309,7 +311,7 @@
 							type="text"
 							name="title"
 							required
-							value={title}
+							bind:value={title}
 							class="w-full rounded-xl border-none bg-gray-100 px-4 py-3 text-sm font-bold ring-1 ring-gray-200 outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-gray-700"
 						/>
 					</label>
@@ -322,46 +324,11 @@
 							name="description"
 							rows="3"
 							class="w-full rounded-xl border-none bg-gray-100 px-4 py-3 text-sm font-medium ring-1 ring-gray-200 outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:ring-gray-700"
-							value={description}
+							bind:value={description}
 						></textarea>
 					</label>
 
-					<label
-						class="relative flex h-44 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 transition-colors hover:border-indigo-400 hover:bg-indigo-50/10 dark:border-gray-700 dark:bg-gray-800/30"
-					>
-						{#if file == null}
-							<div class="text-center">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="mx-auto mb-2 h-10 w-10 text-gray-400"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-									stroke-width="1.5"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-									/>
-								</svg>
-								<p class="text-xs font-bold text-gray-500">Click to upload cover image</p>
-							</div>
-						{:else if previewUrl}
-							<img src={previewUrl} alt="Preview" class="h-full w-full object-cover" />
-						{/if}
-						<input type="file" accept="image/*" class="hidden" onchange={onChange} />
-					</label>
-
-					{#if file}
-						<div class="flex items-center justify-between">
-							<span class="text-xs font-bold text-gray-500">Upload progress</span>
-							<span class="text-xs font-black text-indigo-500">{progress}%</span>
-						</div>
-						<div class="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-800">
-							<div class="h-full rounded-full bg-indigo-500" style="width: {progress}%"></div>
-						</div>
-					{/if}
+					<!-- Image upload removed for now -->
 
 					<div class="pt-2">
 						<button

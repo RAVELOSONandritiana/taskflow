@@ -7,6 +7,7 @@
 	import Dialog from '$lib/components/user/app/Dialog.svelte';
 	import ProjectCard from '$lib/components/user/app/ProjectCard.svelte';
 	import { goto } from '$app/navigation';
+	import { enhance } from '$app/forms';
 	import { theme } from '$lib/store/theme.store';
 	let { data } = $props();
 
@@ -99,17 +100,17 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<form
-		class="shadown-md flex w-full max-w-lg flex-col space-y-4 rounded-xl border border-gray-100 bg-white px-8 py-10 text-left dark:border-gray-800 dark:bg-gray-900"
-		on:submit={(e) => {
-			const form = e.currentTarget;
-			const formData = new FormData(form);
-			const title = formData.get('title') as string;
-			const description = formData.get('description') as string;
-			addProject({ id: v4(), title, description, src: undefined });
-			open = false;
-			form.reset();
+		method="POST"
+		action="?/create"
+		use:enhance={() => {
+			return async ({ result }) => {
+				if (result.type === 'success') {
+					open = false;
+					// Refresh/invalidate logic handled by SvelteKit
+				}
+			};
 		}}
-		on:click|stopPropagation={() => {}}
+		class="shadown-md flex w-full max-w-lg flex-col space-y-4 rounded-xl border border-gray-100 bg-white px-8 py-10 text-left dark:border-gray-800 dark:bg-gray-900"
 	>
 		<h2 class="text-2xl font-bold text-gray-900 dark:text-white">Create New Project</h2>
 		<div class="space-y-4">

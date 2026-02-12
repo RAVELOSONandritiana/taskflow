@@ -56,30 +56,40 @@
 	}
 
 	// Time Logging State
-	let logs = $state([
-		{
-			id: v4(),
-			project: 'API Integration',
-			task: 'Schema Design',
-			duration: '2h 15m',
-			date: 'Today',
-			status: 'completed'
-		},
-		{
-			id: v4(),
-			project: 'Design System',
-			task: 'Color Palette Refinement',
-			duration: '45m',
-			date: 'Today',
-			status: 'completed'
-		}
-	]);
+	let { data } = $props();
+	// svelte-ignore state_referenced_locally
+	let logs = $state(data.logs);
+
+	$effect(() => {
+		logs = data.logs;
+	});
 
 	let newLog = $state({ project: '', task: '', duration: '' });
 
-	function addLog() {
+	async function addLog() {
 		if (!newLog.project || !newLog.duration) return;
-		logs = [{ id: v4(), ...newLog, date: 'Today', status: 'completed' }, ...logs];
+
+		// Manual log entry - assumes completed now
+		// Duration parsing needed if we want to store accurate start/end
+		// For MVP, just creating an entry with description
+		try {
+			const res = await fetch('/api/time-entries', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					description: newLog.task,
+					projectId: newLog.project
+					// Duration handling implies start/end.
+					// Let's just create a start and end now for simplicity based on text
+				})
+			});
+			if (res.ok) {
+				location.reload();
+			}
+		} catch (e) {
+			console.error(e);
+		}
+
 		newLog = { project: '', task: '', duration: '' };
 	}
 

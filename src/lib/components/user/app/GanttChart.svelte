@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
 	import { v4 } from 'uuid';
+	import { onMount } from 'svelte';
+
+	let { project } = $props();
 
 	interface GanttTask {
 		id: string;
@@ -11,41 +14,59 @@
 		color: string;
 	}
 
-	let tasks = $state<GanttTask[]>([
-		{
-			id: v4(),
-			name: 'Planning Phase',
-			startDay: 0,
-			duration: 5,
-			progress: 100,
-			color: 'bg-indigo-500'
-		},
-		{
-			id: v4(),
-			name: 'Design Concept',
-			startDay: 4,
-			duration: 8,
-			progress: 60,
-			color: 'bg-pink-500'
-		},
-		{
-			id: v4(),
-			name: 'Development',
-			startDay: 10,
-			duration: 15,
-			progress: 20,
-			color: 'bg-blue-500'
-		},
-		{
-			id: v4(),
-			name: 'Testing & QA',
-			startDay: 22,
-			duration: 7,
-			progress: 0,
-			color: 'bg-emerald-500'
-		},
-		{ id: v4(), name: 'Launch Prep', startDay: 28, duration: 3, progress: 0, color: 'bg-amber-500' }
-	]);
+	let tasks = $state<GanttTask[]>([]);
+	let loading = $state(true);
+
+	// Calculate project start date (day 0)
+	let projectStartDate = $derived(project?.startDate ? new Date(project.startDate) : new Date());
+
+	async function fetchTasks() {
+		if (!project?.id) return;
+		loading = true;
+		try {
+			const res = await fetch(`/api/tasks?projectId=${project.id}`);
+			if (res.ok) {
+				const data = await res.json();
+				if (data.data) {
+					tasks = data.data
+						.filter((t: any) => t.startDate || t.duration) // Only show tasks with schedule info? Or show all starting at 0?
+						.map((t: any) => {
+							let startDay = 0;
+							if (t.startDate) {
+								const start = new Date(t.startDate);
+								const diffTime = Math.abs(start.getTime() - projectStartDate.getTime());
+								const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+								// Direction matters. If task starts before project, it might be negative?
+								// Let's assume positive for now or use signed calc
+								const signedDiff = Math.ceil(
+									(start.getTime() - projectStartDate.getTime()) / (1000 * 60 * 60 * 24)
+								);
+								startDay = signedDiff > 0 ? signedDiff : 0;
+							}
+
+							return {
+								id: t.id,
+								name: t.title,
+								startDay: startDay,
+								duration: t.duration || 1,
+								progress: t.progress || 0,
+								color: 'bg-indigo-500' // Generate or map from priority/status?
+							};
+						});
+				}
+			}
+		} catch (error) {
+			console.error(error);
+		} finally {
+			loading = false;
+		}
+	}
+
+	$effect(() => {
+		if (project?.id) {
+			fetchTasks();
+		}
+	});
 
 	const days = Array.from({ length: 32 }, (_, i) => i + 1);
 	const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'];
@@ -58,19 +79,55 @@
 		color: 'bg-indigo-500'
 	});
 
-	function addTask() {
-		if (!newTask.name.trim()) return;
-		tasks.push({
-			id: v4(),
-			...newTask,
-			progress: 0
-		});
-		newTask = { name: '', startDay: 0, duration: 3, color: 'bg-indigo-500' };
-		showAddTask = false;
+	async function addTask() {
+		if (!newTask.name.trim() || !project?.id) return;
+
+		// Calculate startDate from startDay
+		const startDate = new Date(projectStartDate);
+		startDate.setDate(startDate.getDate() + newTask.startDay);
+
+		try {
+			const res = await fetch('/api/tasks', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					title: newTask.name,
+					projectId: project.id,
+					startDate: startDate.toISOString(),
+					duration: newTask.duration,
+					progress: 0,
+					colId: 'todo' // Default status
+				})
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				const t = data.data;
+				tasks.push({
+					id: t.id,
+					name: t.title,
+					startDay: newTask.startDay,
+					duration: t.duration || newTask.duration,
+					progress: 0,
+					color: newTask.color
+				});
+				newTask = { name: '', startDay: 0, duration: 3, color: 'bg-indigo-500' };
+				showAddTask = false;
+			}
+		} catch (error) {
+			console.error(error);
+		}
 	}
 
-	function removeTask(id: string) {
-		tasks = tasks.filter((t) => t.id !== id);
+	async function removeTask(id: string) {
+		try {
+			const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+			if (res.ok) {
+				tasks = tasks.filter((t) => t.id !== id);
+			}
+		} catch (error) {
+			console.error(error);
+		}
 	}
 </script>
 
@@ -124,67 +181,77 @@
 			</div>
 
 			<!-- Grid and Bars -->
-			<div class="relative space-y-4">
-				<!-- Vertical Grid Lines -->
-				<div class="pointer-events-none absolute inset-0 flex pl-64">
-					{#each Array(32) as _, i}
-						<div class="flex-1 border-l border-gray-50 dark:border-gray-900/50"></div>
-					{/each}
-				</div>
+			<div class="relative min-h-[200px] space-y-4">
+				{#if loading}
+					<div class="absolute inset-0 flex items-center justify-center">
+						<span class="text-xs text-gray-400">Loading timeline...</span>
+					</div>
+				{:else if tasks.length === 0}
+					<div class="absolute inset-0 flex items-center justify-center">
+						<p class="text-xs font-bold text-gray-400 italic">No tasks with schedule data</p>
+					</div>
+				{:else}
+					<!-- Vertical Grid Lines -->
+					<div class="pointer-events-none absolute inset-0 flex pl-64">
+						{#each Array(32) as _, i}
+							<div class="flex-1 border-l border-gray-50 dark:border-gray-900/50"></div>
+						{/each}
+					</div>
 
-				{#each tasks as task (task.id)}
-					<div class="group relative flex h-12 items-center" in:fade>
-						<!-- Task Name -->
-						<div class="flex w-64 shrink-0 items-center justify-between px-4">
-							<span class="truncate pr-4 text-xs font-black text-gray-700 dark:text-gray-300"
-								>{task.name}</span
-							>
-							<button
-								onclick={() => removeTask(task.id)}
-								aria-label="Remove task"
-								class="text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="h-3.5 w-3.5"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-									stroke-width="3"
-									><path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M6 18L18 6M6 6l12 12"
-									/></svg
+					{#each tasks as task (task.id)}
+						<div class="group relative flex h-12 items-center" in:fade>
+							<!-- Task Name -->
+							<div class="flex w-64 shrink-0 items-center justify-between px-4">
+								<span class="truncate pr-4 text-xs font-black text-gray-700 dark:text-gray-300"
+									>{task.name}</span
 								>
-							</button>
-						</div>
-
-						<!-- Timeline Bar Workspace -->
-						<div class="relative h-full flex-1">
-							<div
-								class="absolute top-2 h-8 rounded-full {task.color} group/bar cursor-pointer shadow-lg shadow-indigo-500/10 transition-all hover:scale-[1.02]"
-								style="left: {(task.startDay / 32) * 100}%; width: {(task.duration / 32) * 100}%"
-							>
-								<!-- Progress Overlay -->
-								<div
-									class="h-full rounded-full bg-white/30 backdrop-blur-[2px]"
-									style="width: {task.progress}%"
-								></div>
-
-								<!-- Tooltip -->
-								<div
-									class="pointer-events-none absolute -top-10 left-1/2 z-30 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-1.5 text-[10px] font-bold whitespace-nowrap text-white opacity-0 shadow-xl transition-all group-hover/bar:opacity-100"
+								<button
+									onclick={() => removeTask(task.id)}
+									aria-label="Remove task"
+									class="text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
 								>
-									{task.progress}% complete • {task.duration} days
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										class="h-3.5 w-3.5"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+										stroke-width="3"
+										><path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M6 18L18 6M6 6l12 12"
+										/></svg
+									>
+								</button>
+							</div>
+
+							<!-- Timeline Bar Workspace -->
+							<div class="relative h-full flex-1">
+								<div
+									class="absolute top-2 h-8 rounded-full {task.color} group/bar cursor-pointer shadow-lg shadow-indigo-500/10 transition-all hover:scale-[1.02]"
+									style="left: {(task.startDay / 32) * 100}%; width: {(task.duration / 32) * 100}%"
+								>
+									<!-- Progress Overlay -->
 									<div
-										class="absolute -bottom-1 left-1/2 -translate-x-1/2 border-t-4 border-r-4 border-l-4 border-t-gray-900 border-r-transparent border-l-transparent"
+										class="h-full rounded-full bg-white/30 backdrop-blur-[2px]"
+										style="width: {task.progress}%"
 									></div>
+
+									<!-- Tooltip -->
+									<div
+										class="pointer-events-none absolute -top-10 left-1/2 z-30 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-1.5 text-[10px] font-bold whitespace-nowrap text-white opacity-0 shadow-xl transition-all group-hover/bar:opacity-100"
+									>
+										{task.progress}% complete • {task.duration} days
+										<div
+											class="absolute -bottom-1 left-1/2 -translate-x-1/2 border-t-4 border-r-4 border-l-4 border-t-gray-900 border-r-transparent border-l-transparent"
+										></div>
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
-				{/each}
+					{/each}
+				{/if}
 			</div>
 
 			<!-- Timeline Footer (Days) -->
@@ -204,25 +271,23 @@
 
 <!-- Add Task Modal (Absolute) -->
 {#if showAddTask}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
 		class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-6 backdrop-blur-sm"
 		transition:fade
-		role="button"
-		tabindex="0"
+		role="dialog"
+		aria-modal="true"
 		onclick={() => (showAddTask = false)}
-		onkeydown={(e) => e.key === 'Escape' && (showAddTask = false)}
 	>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
 			class="w-full max-w-sm rounded-[2.5rem] border border-gray-100 bg-white p-10 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
 			transition:fly={{ y: 20 }}
-			role="dialog"
-			aria-labelledby="gantt-modal-title"
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.stopPropagation()}
 		>
-			<h4 id="gantt-modal-title" class="mb-2 text-2xl font-black text-gray-900 dark:text-white">
-				New Timeline Task
-			</h4>
+			<h4 class="mb-2 text-2xl font-black text-gray-900 dark:text-white">New Timeline Task</h4>
 			<p class="mb-8 text-xs font-bold tracking-widest text-indigo-500 uppercase">
 				Scheduling your next move
 			</p>

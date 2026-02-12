@@ -4,6 +4,8 @@
 	import Dialog from './Dialog.svelte';
 	import { fade, fly } from 'svelte/transition';
 
+	let { conversationId } = $props();
+
 	interface Message {
 		id: string;
 		role: 'user' | 'assistant' | 'system';
@@ -32,16 +34,7 @@
 		}
 	];
 
-	let messages = $state<Message[]>([
-		{
-			id: '1',
-			role: 'assistant',
-			content:
-				'Hello! I am your AI assistant. You can chat with me locally using LM Studio or instantly via Puter Cloud.',
-			time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-		}
-	]);
-
+	let messages = $state<Message[]>([]);
 	let newMessage = $state('');
 	let isTyping = $state(false);
 	let showHelp = $state(false);
@@ -50,6 +43,30 @@
 
 	let selectedProviderId = $state<'local' | 'puter'>('puter');
 	let selectedProvider = $derived(providers.find((p) => p.id === selectedProviderId)!);
+
+	async function fetchMessages() {
+		if (!conversationId) return;
+		try {
+			const res = await fetch(`/api/ai/conversations/${conversationId}/messages`);
+			if (res.ok) {
+				const data = await res.json();
+				messages = data.data.map((m: any) => ({
+					id: m.id,
+					role: m.role,
+					content: m.content,
+					time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+				}));
+			}
+		} catch (e) {
+			console.error(e);
+		}
+	}
+
+	$effect(() => {
+		if (conversationId) {
+			fetchMessages();
+		}
+	});
 
 	$effect(() => {
 		if (chatContainer && (messages.length || isTyping)) {
@@ -62,17 +79,17 @@
 
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
-		if (!newMessage.trim() || isTyping) return;
+		if (!newMessage.trim() || isTyping || !conversationId) return;
 
-		const userMsg: Message = {
-			id: Math.random().toString(36).substring(7),
+		const tempId = Math.random().toString(36).substring(7);
+		const content = newMessage;
+		messages.push({
+			id: tempId,
 			role: 'user',
-			content: newMessage,
+			content: content,
 			time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-		};
+		});
 
-		messages.push(userMsg);
-		const currentInput = newMessage;
 		newMessage = '';
 		isTyping = true;
 
@@ -81,56 +98,42 @@
 		if (textarea) textarea.style.height = 'auto';
 
 		try {
-			if (selectedProviderId === 'local') {
-				const response = await fetch(selectedProvider.url!, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						model: 'local-model',
-						messages: messages.map((m) => ({ role: m.role, content: m.content })),
-						temperature: 0.7
+			// Send to backend API which handles AI call (or mock for now)
+			const res = await fetch(`/api/ai/conversations/${conversationId}/messages`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ content })
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				const { userMessage, aiMessage } = data.data;
+
+				// Update user message ID if needed, or just let it trigger refresh/append
+				// Append AI message
+				messages.push({
+					id: aiMessage.id,
+					role: 'assistant',
+					content: aiMessage.content,
+					time: new Date(aiMessage.createdAt).toLocaleTimeString([], {
+						hour: '2-digit',
+						minute: '2-digit'
 					})
 				});
-
-				if (!response.ok)
-					throw new Error('Local server is not responding. Please check LM Studio.');
-
-				const data = await response.json();
-				const aiContent = data.choices[0].message.content;
-				addMessage(aiContent);
 			} else {
-				// Use Puter.js v2 SDK
-				// @ts-ignore
-				if (typeof puter !== 'undefined') {
-					// @ts-ignore
-					const response = await puter.ai.chat(
-						messages.map((m) => ({ role: m.role, content: m.content }))
-					);
-					addMessage(response.toString());
-				} else {
-					throw new Error('Puter SDK not loaded. Please refresh the page.');
-				}
+				throw new Error('Failed to send message');
 			}
 		} catch (error: any) {
 			console.error('LLM Error:', error);
 			messages.push({
 				id: 'error-' + Date.now(),
 				role: 'assistant',
-				content: `Error: ${error.message}. ${selectedProviderId === 'local' ? 'Make sure LM Studio "Local Server" is started.' : 'Puter.js connection failed.'}`,
+				content: `Error: ${error.message}.`,
 				time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 			});
 		} finally {
 			isTyping = false;
 		}
-	}
-
-	function addMessage(content: string) {
-		messages.push({
-			id: Math.random().toString(36).substring(7),
-			role: 'assistant',
-			content,
-			time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-		});
 	}
 </script>
 

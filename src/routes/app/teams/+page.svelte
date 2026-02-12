@@ -30,114 +30,54 @@
 		memberList: Member[];
 	}
 
-	let teams = $state<Team[]>([
-		{
-			id: 1,
-			name: 'Core Architecture',
-			description: 'Deep dive into system design, patterns, and infrastructure scalability.',
-			members: 4,
-			active: true,
-			messages: [
-				{
-					id: '1',
-					sender: 'Sarah',
-					content: 'Hey team, reviewed the new architecture doc. Looks solid!',
-					time: '10:30 AM',
-					isMe: false
-				},
-				{
-					id: '2',
-					sender: 'Mike',
-					content: 'Thanks Sarah. Any thoughts on the database layer?',
-					time: '10:35 AM',
-					isMe: false
-				}
-			],
-			memberList: [
-				{ name: 'Sarah Miller', role: 'Architect' },
-				{ name: 'Mike Ross', role: 'Backend Lead' },
-				{ name: 'Alex Johnson', role: 'Fullstack' },
-				{ name: 'David Chen', role: 'DevOps' }
-			]
-		},
-		{
-			id: 2,
-			name: 'Frontend Guild',
-			description: 'Discussing UI components, accessibility, and modern frontend frameworks.',
-			members: 8,
-			active: true,
-			messages: [
-				{
-					id: '1',
-					sender: 'Alex',
-					content: 'Vite 6 migration is almost done.',
-					time: 'Yesterday',
-					isMe: true
-				},
-				{
-					id: '2',
-					sender: 'John',
-					content: 'Awesome, let me know when I can pull.',
-					time: 'Yesterday',
-					isMe: false
-				}
-			],
-			memberList: [
-				{ name: 'Alex Johnson', role: 'Frontend Lead' },
-				{ name: 'John Doe', role: 'Senior dev' },
-				{ name: 'Jane Smith', role: 'UI Engineer' }
-			]
-		},
-		{
-			id: 3,
-			name: 'Product Design',
-			description: 'Crafting premium user experiences and refining visual identity.',
-			members: 3,
-			active: false,
-			messages: [],
-			memberList: [
-				{ name: 'Emilly Stark', role: 'Product Manager' },
-				{ name: 'Robert Fox', role: 'Lead Designer' }
-			]
-		}
-	]);
+	let { data } = $props();
+	// svelte-ignore state_referenced_locally
+	let teams = $state(data.teams);
+	// svelte-ignore state_referenced_locally
+	let workspaces = $state(data.workspaces || []);
 
-	let selectedTeamId = $state<number | null>(null);
+	$effect(() => {
+		teams = data.teams;
+		workspaces = data.workspaces || [];
+	});
+
+	let selectedTeamId = $state<string | null>(null);
 	let selectedTeam = $derived(teams.find((t) => t.id === selectedTeamId) ?? null);
 	let openCreate = $state(false);
 	let newTeamName = $state('');
 
-	function createTeam() {
+	async function createTeam() {
 		if (!newTeamName.trim()) return;
-		const nextId = Math.max(0, ...teams.map((t) => t.id)) + 1;
-		teams.push({
-			id: nextId,
-			name: newTeamName,
-			description: 'A new discussion space for the team.',
-			members: 1,
-			active: true,
-			messages: [],
-			memberList: [{ name: 'Alex Johnson', role: 'Admin' }]
-		});
-		newTeamName = '';
-		openCreate = false;
-		selectedTeamId = nextId;
+
+		try {
+			const workspaceId = workspaces[0]?.id; // Pick first for now
+			if (!workspaceId) {
+				console.error('No workspace found');
+				return;
+			}
+
+			const res = await fetch('/api/teams', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					name: newTeamName,
+					description: 'New team discussion',
+					workspaceId
+				})
+			});
+
+			if (res.ok) {
+				location.reload();
+			}
+		} catch (e) {
+			console.error(e);
+		}
 	}
 
 	function addMember() {
 		if (!selectedTeam) return;
-		selectedTeam.members++;
-		selectedTeam.memberList.push({
-			name: `Guest Developer ${selectedTeam.members}`,
-			role: 'Contributor'
-		});
-		selectedTeam.messages.push({
-			id: Math.random().toString(36).substr(2, 9),
-			sender: 'System',
-			content: 'A new member has joined the team!',
-			time: 'Just now',
-			isMe: false
-		});
+		// Placeholder for add member logic
+		console.log('Add member clicked');
 	}
 </script>
 
@@ -348,7 +288,7 @@
 					New Discussion Group
 				</h2>
 				<p class="text-sm font-medium text-gray-500 italic">
-					Create a space for developpers and projects people to collaborate.
+					Create a space for developers and projects people to collaborate.
 				</p>
 			</div>
 

@@ -3,8 +3,36 @@
 	import { theme } from '$lib/store/theme.store';
 	import Avatar from '$lib/images/solo.png';
 
+	let { data } = $props();
+	// svelte-ignore state_referenced_locally
+	let settings = $state(data.settings);
+	// svelte-ignore state_referenced_locally
+	let user = $state(data.user);
+
+	$effect(() => {
+		settings = data.settings;
+		user = data.user;
+	});
+
 	let activeTab = $state('general');
 
+	async function updateSettings(key: string, value: any) {
+		try {
+			const res = await fetch('/api/settings', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ [key]: value })
+			});
+			// Update local state if needed (svelte 5 fine-grained reactivity handled by state)
+			if (res.ok) {
+				// confirm
+			}
+		} catch (e) {
+			console.error(e);
+		}
+	}
+
+	// Tabs definition...
 	const tabs = [
 		{
 			id: 'general',

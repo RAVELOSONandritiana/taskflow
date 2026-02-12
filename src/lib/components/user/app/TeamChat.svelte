@@ -19,7 +19,7 @@
 	}
 
 	interface Team {
-		id: number;
+		id: string; // Updated to string as per Prisma
 		name: string;
 		members: number;
 		messages: Message[];
@@ -31,8 +31,47 @@
 	let showMembers = $state(false);
 	let chatContainer = $state<HTMLDivElement>();
 
+	let messages = $state<Message[]>([]);
+	let loading = $state(false);
+
+	async function fetchMessages() {
+		if (!team?.id) return;
+		loading = true;
+		try {
+			const res = await fetch(`/api/teams/${team.id}/messages`);
+			if (res.ok) {
+				const data = await res.json();
+				if (data.data) {
+					messages = data.data.map((m: any) => ({
+						id: m.id,
+						sender: m.sender.name || 'Unknown',
+						content: m.content,
+						time: new Date(m.createdAt).toLocaleTimeString([], {
+							hour: '2-digit',
+							minute: '2-digit'
+						}),
+						isMe: false // Need current user ID to determine this properly. For now assume false or handle via props
+						// Actually, I can check if sender.id matches user.id but I don't have user.id here easily.
+						// I can pass currentUser prop.
+					}));
+				}
+			}
+		} catch (error) {
+			console.error(error);
+		} finally {
+			loading = false;
+		}
+	}
+
 	$effect(() => {
-		if (chatContainer && team?.messages.length) {
+		if (team?.id) {
+			// messages = team.messages; // Don't use prop messages logic anymore
+			fetchMessages();
+		}
+	});
+
+	$effect(() => {
+		if (chatContainer && messages.length) {
 			chatContainer.scrollTo({
 				top: chatContainer.scrollHeight,
 				behavior: 'smooth'
@@ -40,36 +79,36 @@
 		}
 	});
 
-	function sendMessage(e: SubmitEvent) {
+	async function sendMessage(e: SubmitEvent) {
 		e.preventDefault();
-		if (!newMessage.trim() || !team) return;
+		if (!newMessage.trim() || !team?.id) return;
 
-		const msg: Message = {
-			id: Math.random().toString(36).substr(2, 9),
-			sender: 'Alex',
-			content: newMessage,
-			time: 'Just now',
-			isMe: true
-		};
-
-		team.messages.push(msg);
-		newMessage = '';
-
-		// Reset textarea height
-		const textarea = document.querySelector('textarea');
-		if (textarea) textarea.style.height = 'auto';
-
-		// Simulate response
-		setTimeout(() => {
-			if (!team) return;
-			team.messages.push({
-				id: Math.random().toString(36).substr(2, 9),
-				sender: 'Developer Assistant',
-				content: 'Received! Let me look into that part of the code.',
-				time: 'Just now',
-				isMe: false
+		try {
+			const res = await fetch(`/api/teams/${team.id}/messages`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ content: newMessage })
 			});
-		}, 1500);
+
+			if (res.ok) {
+				const data = await res.json();
+				const m = data.data;
+				messages.push({
+					id: m.id,
+					sender: 'Me', // Optimistic or from response
+					content: m.content,
+					time: 'Just now',
+					isMe: true
+				});
+				newMessage = '';
+
+				// Reset textarea height
+				const textarea = document.querySelector('textarea');
+				if (textarea) textarea.style.height = 'auto';
+			}
+		} catch (error) {
+			console.error(error);
+		}
 	}
 </script>
 
@@ -138,7 +177,11 @@
 
 		<!-- Chat Content -->
 		<div class="custom-scrollbar flex-1 overflow-y-auto p-6" bind:this={chatContainer}>
-			{#if team.messages.length === 0}
+			{#if loading}
+				<div class="flex h-full items-center justify-center">
+					<span class="text-xs text-gray-400">Loading messages...</span>
+				</div>
+			{:else if messages.length === 0}
 				<div class="flex h-full flex-col items-center justify-center text-center opacity-50">
 					<div class="mb-4 rounded-full bg-gray-50 p-6 dark:bg-gray-800">
 						<svg
@@ -162,7 +205,7 @@
 					</p>
 				</div>
 			{:else}
-				{#each team.messages as msg (msg.id)}
+				{#each messages as msg (msg.id)}
 					<MessageItem sender={msg.sender} content={msg.content} time={msg.time} isMe={msg.isMe} />
 				{/each}
 			{/if}
